@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>芊芊專屬打卡小程式</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="芊芊打卡">
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px 15px 160px 15px;
+      background-color: #FFFDE7;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="%23FBC02D" stroke-width="3" opacity="0.15"/><path d="M50 50 L50 10 M50 50 L85 67 M50 50 L15 67 M50 50 L50 90 M50 50 L15 33 M50 50 L85 33" stroke="%23FBC02D" stroke-width="2" opacity="0.15"/></svg>');
+      background-repeat: repeat;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #4E342E;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container { width: 100%; max-width: 420px; }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #F57F17;
+      text-align: center;
+      margin-bottom: 12px;
+      text-shadow: 1px 1px 0px #FFF;
+    }
+
+    .dashboard {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(251, 192, 45, 0.2);
+      border: 3px solid #FFF59D;
+      margin-bottom: 20px;
+    }
+
+    .points-title { font-size: 1rem; color: #795548; font-weight: bold; }
+    .points-display { font-size: 3.2rem; font-weight: 900; color: #F57F17; margin: 2px 0; }
+
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab-btn {
+      flex: 1; padding: 10px; border: none; border-radius: 16px;
+      font-size: 1rem; font-weight: bold; background: rgba(255, 255, 255, 0.6);
+      color: #795548; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .tab-btn.active {
+      background: #FBC02D; color: #3E2723;
+      box-shadow: 0 4px 10px rgba(251, 192, 45, 0.3);
+    }
+
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { color: #5D4037; font-size: 1.2rem; font-weight: bold; margin: 0; }
+
+    .action-btn {
+      background: #81C784; color: white; border: none; padding: 6px 12px;
+      border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .card-list { display: flex; flex-direction: column; gap: 12px; }
+    .card-item {
+      background: rgba(255, 255, 255, 0.92); border-radius: 18px; padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease;
+    }
+    .card-item.completed { background: rgba(240, 240, 240, 0.75); border: 1px solid #C8E6C9; }
+    .card-info h3 { margin: 0 0 4px 0; font-size: 1.05rem; color: #4E342E; }
+    .card-item.completed .card-info h3 { color: #A1887F; text-decoration: line-through; }
+
+    .task-badge {
+      display: inline-block; background: #FFF59D; color: #F57F17;
+      padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
+    }
+
+    .upload-btn {
+      background: #FBC02D; color: #3E2723; border: none; padding: 10px 14px;
+      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    }
+    .upload-btn.done { background: #A5D6A7; color: #1B5E20; cursor: default; box-shadow: none; }
+
+    .redeem-btn {
+      background: #FFB74D; color: white; border: none; padding: 10px 14px;
+      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 3px 8px rgba(255, 183, 77, 0.3);
+    }
+    .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
+
+    /* 🦦 方案 C：Q 版極簡「拍手搓手」小海獺 */
+    .otter-wrapper {
+      position: fixed;
+      bottom: 12px;
+      right: 15px;
+      z-index: 99;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .otter-bubble {
+      background: #FFF;
+      padding: 8px 14px;
+      border-radius: 18px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #6D4C41;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 2px solid #FFE082;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      animation: floatBubble 2.5s infinite ease-in-out;
+    }
+
+    .otter-svg-card {
+      width: 110px;
+      height: 120px;
+      animation: otterFloat 3s infinite ease-in-out;
+      filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.08));
+    }
+
+    /* 拍手動作動畫關鍵影格 */
+    .paw-left, .paw-right {
+      transform-origin: center;
+      transition: transform 0.15s;
+    }
+
+    .otter-svg-card.active {
+      animation: otterJump 0.4s infinite alternate ease-in-out !important;
+    }
+
+    .otter-svg-card.active .paw-left {
+      animation: clapLeft 0.18s infinite alternate ease-in-out;
+    }
+
+    .otter-svg-card.active .paw-right {
+      animation: clapRight 0.18s infinite alternate ease-in-out;
+    }
+
+    @keyframes otterFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+
+    @keyframes floatBubble {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes otterJump {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-12px) scale(1.06); }
+    }
+
+    /* 高頻拍手/搓手效果 */
+    @keyframes clapLeft {
+      0% { transform: rotate(0deg) translate(0, 0); }
+      100% { transform: rotate(20deg) translate(8px, -4px); }
+    }
+
+    @keyframes clapRight {
+      0% { transform: rotate(0deg) translate(0, 0); }
+      100% { transform: rotate(-20deg) translate(-8px, -4px); }
+    }
+
+    /* 彈出視窗 (Modal) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: center; z-index: 1000;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: #FFFDE7; width: 85%; max-width: 360px; border-radius: 24px;
+      padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 4px solid #FFF176;
+      text-align: center; transform: scale(0.8); transition: transform 0.3s ease;
+      max-height: 85vh; overflow-y: auto;
+    }
+    .modal-overlay.active .modal-card { transform: scale(1); }
+    .modal-title { font-size: 1.2rem; color: #5D4037; font-weight: bold; margin-bottom: 12px; }
+
+    .quote-box {
+      background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 20px;
+      text-align: left; border: 1px solid #FFE082;
+    }
+    .quote-zh { font-size: 1.1rem; font-weight: bold; color: #E65100; margin-bottom: 6px; }
+    .quote-en { font-size: 0.9rem; color: #5D4037; margin-bottom: 4px; }
+    .quote-jp { font-size: 0.9rem; color: #1B5E20; }
+
+    .modal-btn {
+      background: #FBC02D; color: #3E2723; border: none; padding: 10px 24px;
+      border-radius: 20px; font-size: 1rem; font-weight: bold; cursor: pointer;
+    }
+
+    .preview-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; margin-bottom: 15px; border: 2px solid #DDD; }
+    .btn-group { display: flex; gap: 10px; justify-content: center; }
+    .cancel-btn { background: #E0E0E0; color: #616161; }
+
+    .manage-list { text-align: left; margin-bottom: 15px; }
+    .manage-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFF; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px;
+      border: 1px solid #FFE082; font-size: 0.9rem;
+    }
+    .delete-btn {
+      background: #FF5252; color: white; border: none; padding: 4px 8px;
+      border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer;
+    }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-title">🌸 芊芊專屬打卡小程式 🌸</div>
+
+    <div class="dashboard">
+      <div class="points-title">⭐ 芊芊累積的榮譽點數 ⭐</div>
+      <div class="points-display" id="total-points">0</div>
+      <small style="color: #8D6E63;">持續努力，準備換大獎！</small>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tab-tasks-btn" onclick="switchTab('tasks')">📋 打卡任務</button>
+      <button class="tab-btn" id="tab-shop-btn" onclick="switchTab('shop')">🎁 禮物商店</button>
+    </div>
+
+    <div id="view-tasks">
+      <div class="section-header">
+        <h3 class="section-title">今日打卡任務</h3>
+      </div>
+      <div class="card-list" id="task-list"></div>
+    </div>
+
+    <div id="view-shop" style="display: none;">
+      <div class="section-header">
+        <h3 class="section-title">獎勵兌換中心</h3>
+        <button class="action-btn" style="background:#8D6E63" onclick="openParentModal()">⚙️ 家長管理</button>
+      </div>
+      <div class="card-list" id="reward-list"></div>
+    </div>
+  </div>
+
+  <div class="otter-wrapper" onclick="interactOtter()">
+    <div class="otter-bubble" id="otter-text">拍拍手！芊芊加油喔！👏</div>
+    
+    <svg class="otter-svg-card" id="otter-svg" viewBox="0 0 120 130">
+      <defs>
+        <linearGradient id="otterFur" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E0D5C1" />
+          <stop offset="100%" stop-color="#CBBCA5" />
+        </linearGradient>
+      </defs>
+
+      <g stroke="#7A6858" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="42" cy="118" rx="10" ry="6" fill="#CBBCA5" />
+        <ellipse cx="78" cy="118" rx="10" ry="6" fill="#CBBCA5" />
+        
+        <path d="M 32 65 C 22 80, 22 110, 38 118 C 48 122, 72 122, 82 118 C 98 110, 98 80, 88 65 Z" fill="url(#otterFur)" />
+        
+        <path d="M 40 70 C 32 82, 32 106, 42 112 C 50 115, 70 115, 78 112 C 88 106, 88 82, 80 70 Z" fill="#FFFFFF" stroke="none" />
+        
+        <circle cx="60" cy="45" r="32" fill="url(#otterFur)" />
+        <circle cx="31" cy="32" r="5" fill="#E0D5C1" /> <circle cx="89" cy="32" r="5" fill="#E0D5C1" opacity="1" /> <circle cx="31" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
+        <circle cx="89" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
+
+        <ellipse cx="42" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
+        <ellipse cx="78" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
+
+        <path d="M 45 42 Q 49 38, 53 42" fill="none" stroke="#524336" stroke-width="2.5" />
+        <path d="M 67 42 Q 71 38, 75 42" fill="none" stroke="#524336" stroke-width="2.5" />
+
+        <ellipse cx="60" cy="48" rx="3.5" ry="2.5" fill="#524336" stroke="none" />
+        <path d="M 54 52 Q 60 56, 60 52 Q 60 56, 66 52" fill="none" stroke="#524336" stroke-width="2.5" />
+
+        <g class="paw-left">
+          <path d="M 30 75 C 38 82, 50 82, 52 72 C 46 68, 36 68, 30 75 Z" fill="#E0D5C1" />
+        </g>
+        <g class="paw-right">
+          <path d="M 90 75 C 82 82, 70 82, 68 72 C 74 68, 84 68, 90 75 Z" fill="#E0D5C1" />
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="modal-overlay" id="quote-modal">
+    <div class="modal-card">
+      <div class="modal-title">✨ 芊芊的每日一句 ✨</div>
+      <div class="quote-box">
+        <div class="quote-zh" id="q-zh"></div>
+        <div class="quote-en" id="q-en"></div>
+        <div class="quote-jp" id="q-jp"></div>
+      </div>
+      <button class="modal-btn" onclick="closeQuoteModal()">收到！今天也要加油 ☀️</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="preview-modal">
+    <div class="modal-card">
+      <div class="modal-title">📷 確認上傳照片佐證</div>
+      <img id="preview-image" class="preview-img" src="" alt="預覽照片">
+      <div class="btn-group">
+        <button class="modal-btn cancel-btn" onclick="closePreviewModal()">重拍</button>
+        <button class="modal-btn" onclick="confirmUpload()">確定打卡！</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="parent-modal">
+    <div class="modal-card">
+      <div class="modal-title">⚙️ 家長管理後台</div>
+      
+      <div id="parent-auth">
+        <input type="password" id="parent-pin" placeholder="請輸入家長密碼" style="padding: 10px; font-size: 1rem; width: 70%; border-radius: 12px; border: 1px solid #CCC; text-align: center; margin: 15px 0;">
+        <br>
+        <div class="btn-group">
+          <button class="modal-btn cancel-btn" onclick="closeParentModal()">取消</button>
+          <button class="modal-btn" onclick="checkParentPin()">登入</button>
+        </div>
+      </div>
+
+      <div id="parent-controls" style="display: none; text-align: left;">
+        <hr style="border: 0.5px solid #FFE082; margin: 10px 0 15px 0;">
+        
+        <button class="action-btn" style="background:#FF9800; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewReward()">➕ 新增禮物項目</button>
+        <button class="action-btn" style="background:#81C784; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewTask()">➕ 新增打卡任務</button>
+        <button class="action-btn" style="background:#64B5F6; width:100%; padding: 10px; margin-bottom: 15px;" onclick="adjustPointsDirectly()">🪙 手動調整芊芊的點數</button>
+
+        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">📋 現有打卡任務（點擊刪除）：</h4>
+        <div class="manage-list" id="manage-tasks-list"></div>
+
+        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">🎁 現有禮物項目（點擊刪除）：</h4>
+        <div class="manage-list" id="manage-rewards-list"></div>
+
+        <div style="margin-top: 15px; text-align: center;">
+          <button class="modal-btn cancel-btn" onclick="closeParentModal()">完成並離開</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function getTodayString() {
+      const today = new Date();
+      return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    }
+
+    const multiQuotes = [
+      { zh: "今天的芊芊又比昨天更棒了！", en: "You are getting better every single day!", jp: "今日のチェンチェンは昨日より素晴らしい！" },
+      { zh: "堅持到底的小英雄最厲害！", en: "Superstar who keeps going to the end!", jp: "最後まで頑張る小さなヒーローが一番すごい！" },
+      { zh: "每一個小努力，都會變成大夢想！", en: "Small efforts turn into big dreams!", jp: "小さな努力が大きな夢に変わるよ！" },
+      { zh: "今天也要帶著燦爛的微笑完成任務喔！", en: "Complete your tasks with a big smile today!", jp: "今日も素敵な笑顔で任務を完了しよう！" }
+    ];
+
+    const otterDialogues = [
+      "拍拍手！芊芊最棒了！👏",
+      "今天又累積了好多點數呢！✨",
+      "記得天天打卡，換大禮物喔！🎁",
+      "為你加油！芊芊衝呀！🦦",
+      "搓搓手！芊芊今天超級棒！👏"
+    ];
+
+    let defaultTasks = [
+      { id: 'homework', title: '📝 完成學校作業', points: 10 },
+      { id: 'housework', title: '🧹 主動幫忙家事', points: 5 },
+      { id: 'reading', title: '📖 專心閱讀 20 分鐘', points: 10 },
+      { id: 'drawing', title: '🎨 完成繪畫創作', points: 10 },
+      { id: 'sport', title: '🏃 運動 30 分鐘', points: 10 }
+    ];
+
+    let defaultRewards = [
+      { id: 'r100', title: '🍦 美味小冰淇淋 / 點心', cost: 100 },
+      { id: 'r200', title: '✏️ 挑選喜歡的文具 / 玩遊戲 30 分鐘', cost: 200 },
+      { id: 'r300', title: '🎬 觀看一部精采電影 / 買故事繪本', cost: 300 },
+      { id: 'r500', title: '🎡 去公園野餐 / 樂園半日遊', cost: 500 },
+      { id: 'r1000', title: '👑 終極夢幻大獎（家長特別獎勵）', cost: 1000 }
+    ];
+
+    let currentPoints = parseInt(localStorage.getItem('qian_points') || '0');
+    let allTasks = JSON.parse(localStorage.getItem('qian_all_tasks') || JSON.stringify(defaultTasks));
+    let allRewards = JSON.parse(localStorage.getItem('qian_all_rewards') || JSON.stringify(defaultRewards));
+
+    let completedRecords = JSON.parse(localStorage.getItem('qian_completed_records') || '{}');
+    const todayStr = getTodayString();
+    let todayCompletedTasks = completedRecords[todayStr] || [];
+
+    let activePoints = 0;
+    let activeTaskId = null;
+
+    function init() {
+      document.getElementById('total-points').innerText = currentPoints;
+      renderTaskList();
+      renderRewardList();
+      showRandomQuote();
+    }
+
+    // 🦦 點擊觸發拍手與對話
+    function interactOtter() {
+      const text = otterDialogues[Math.floor(Math.random() * otterDialogues.length)];
+      document.getElementById('otter-text').innerText = text;
+      
+      const svg = document.getElementById('otter-svg');
+      svg.classList.add('active');
+      setTimeout(() => svg.classList.remove('active'), 1200);
+    }
+
+    function switchTab(tab) {
+      if (tab === 'tasks') {
+        document.getElementById('view-tasks').style.display = 'block';
+        document.getElementById('view-shop').style.display = 'none';
+        document.getElementById('tab-tasks-btn').classList.add('active');
+        document.getElementById('tab-shop-btn').classList.remove('active');
+      } else {
+        document.getElementById('view-tasks').style.display = 'none';
+        document.getElementById('view-shop').style.display = 'block';
+        document.getElementById('tab-tasks-btn').classList.remove('active');
+        document.getElementById('tab-shop-btn').classList.add('active');
+      }
+    }
+
+    function renderTaskList() {
+      const listContainer = document.getElementById('task-list');
+      listContainer.innerHTML = '';
+
+      allTasks.forEach(task => {
+        const isDone = todayCompletedTasks.includes(task.id);
+        const card = document.createElement('div');
+        card.className = `card-item ${isDone ? 'completed' : ''}`;
+        
+        card.innerHTML = `
+          <div class="card-info">
+            <h3>${task.title}</h3>
+            <span class="task-badge">+${task.points} 點</span>
+          </div>
+          ${isDone 
+            ? `<button class="upload-btn done" disabled>✅ 今日已打卡</button>`
+            : `<button class="upload-btn" onclick="triggerUpload('${task.id}', ${task.points})">📷 拍照打卡</button>`
+          }
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    function renderRewardList() {
+      const shopContainer = document.getElementById('reward-list');
+      shopContainer.innerHTML = '';
+
+      allRewards.forEach(reward => {
+        const canAfford = currentPoints >= reward.cost;
+        const diff = reward.cost - currentPoints;
+        const card = document.createElement('div');
+        card.className = 'card-item';
+        
+        card.innerHTML = `
+          <div class="card-info">
+            <h3>${reward.title}</h3>
+            <span class="task-badge" style="background:#FFE082; color:#E65100;">需要 ${reward.cost} 點</span>
+          </div>
+          ${canAfford 
+            ? `<button class="redeem-btn" onclick="redeemReward('${reward.title}', ${reward.cost})">🎁 兌換</button>`
+            : `<button class="redeem-btn disabled" disabled>還差 ${diff} 點</button>`
+          }
+        `;
+        shopContainer.appendChild(card);
+      });
+    }
+
+    function openParentModal() {
+      document.getElementById('parent-auth').style.display = 'block';
+      document.getElementById('parent-controls').style.display = 'none';
+      document.getElementById('parent-pin').value = '';
+      document.getElementById('parent-modal').classList.add('active');
+    }
+
+    function closeParentModal() {
+      document.getElementById('parent-modal').classList.remove('active');
+    }
+
+    function checkParentPin() {
+      const pin = document.getElementById('parent-pin').value;
+      if (pin === '1234') {
+        document.getElementById('parent-auth').style.display = 'none';
+        document.getElementById('parent-controls').style.display = 'block';
+        renderManageLists();
+      } else {
+        alert("密碼不正確喔！");
+      }
+    }
+
+    function renderManageLists() {
+      const taskManageBox = document.getElementById('manage-tasks-list');
+      taskManageBox.innerHTML = '';
+      allTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'manage-item';
+        div.innerHTML = `
+          <span>${task.title} (+${task.points}點)</span>
+          <button class="delete-btn" onclick="deleteTask('${task.id}')">刪除</button>
+        `;
+        taskManageBox.appendChild(div);
+      });
+
+      const rewardManageBox = document.getElementById('manage-rewards-list');
+      rewardManageBox.innerHTML = '';
+      allRewards.forEach(reward => {
+        const div = document.createElement('div');
+        div.className = 'manage-item';
+        div.innerHTML = `
+          <span>${reward.title} (${reward.cost}點)</span>
+          <button class="delete-btn" onclick="deleteReward('${reward.id}')">刪除</button>
+        `;
+        rewardManageBox.appendChild(div);
+      });
+    }
+
+    function deleteTask(id) {
+      if (confirm("確定要刪除這個任務嗎？")) {
+        allTasks = allTasks.filter(t => t.id !== id);
+        localStorage.setItem('qian_all_tasks', JSON.stringify(allTasks));
+        renderTaskList();
+        renderManageLists();
+      }
+    }
+
+    function deleteReward(id) {
+      if (confirm("確定要刪除這個禮物嗎？")) {
+        allRewards = allRewards.filter(r => r.id !== id);
+        localStorage.setItem('qian_all_rewards', JSON.stringify(allRewards));
+        renderRewardList();
+        renderManageLists();
+      }
+    }
+
+    function addNewTask() {
+      const taskName = prompt("請輸入新增的打卡任務名稱：", "🎹 練習彈鋼琴");
+      if (taskName && taskName.trim() !== "") {
+        const pointsStr = prompt("請輸入完成此任務獲得的點數：", "10");
+        const pts = parseInt(pointsStr) || 10;
+        const newTask = { id: 'task_' + Date.now(), title: taskName.trim(), points: pts };
+        allTasks.push(newTask);
+        localStorage.setItem('qian_all_tasks', JSON.stringify(allTasks));
+        renderTaskList();
+        renderManageLists();
+      }
+    }
+
+    function addNewReward() {
+      const rewardName = prompt("請輸入新增的禮物名稱：", "🧸 買新娃娃");
+      if (!rewardName || !rewardName.trim()) return;
+      
+      const costStr = prompt("請輸入兌換所需點數：", "150");
+      const cost = parseInt(costStr);
+
+      if (rewardName && !isNaN(cost) && cost > 0) {
+        const newReward = { id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost };
+        allRewards.push(newReward);
+        localStorage.setItem('qian_all_rewards', JSON.stringify(allRewards));
+        renderRewardList();
+        renderManageLists();
+      }
+    }
+
+    function adjustPointsDirectly() {
+      const input = prompt("請輸入要調整的點數總額：", currentPoints);
+      const newPts = parseInt(input);
+      if (!isNaN(newPts) && newPts >= 0) {
+        currentPoints = newPts;
+        localStorage.setItem('qian_points', currentPoints);
+        document.getElementById('total-points').innerText = currentPoints;
+        renderRewardList();
+        alert(`點數已更新為 ${currentPoints} 點！`);
+      }
+    }
+
+    function redeemReward(title, cost) {
+      if (confirm(`確定要花費 ${cost} 點兌換「${title}」嗎？`)) {
+        currentPoints -= cost;
+        localStorage.setItem('qian_points', currentPoints);
+        document.getElementById('total-points').innerText = currentPoints;
+        renderRewardList();
+        
+        interactOtter();
+        fireFancyConfetti();
+
+        alert(`🎉 恭喜芊芊成功兌換「${title}」！找爸爸媽媽領取禮物吧！`);
+      }
+    }
+
+    function showRandomQuote() {
+      const item = multiQuotes[Math.floor(Math.random() * multiQuotes.length)];
+      document.getElementById('q-zh').innerText = item.zh;
+      document.getElementById('q-en').innerText = item.en;
+      document.getElementById('q-jp').innerText = item.jp;
+      document.getElementById('quote-modal').classList.add('active');
+    }
+
+    function closeQuoteModal() {
+      document.getElementById('quote-modal').classList.remove('active');
+    }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.capture = 'environment';
+    document.body.appendChild(fileInput);
+
+    function triggerUpload(taskId, points) {
+      activeTaskId = taskId;
+      activePoints = points;
+      fileInput.click();
+    }
+
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('preview-image').src = evt.target.result;
+          document.getElementById('preview-modal').classList.add('active');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function closePreviewModal() {
+      document.getElementById('preview-modal').classList.remove('active');
+      fileInput.value = '';
+    }
+
+    function confirmUpload() {
+      closePreviewModal();
+      currentPoints += activePoints;
+      localStorage.setItem('qian_points', currentPoints);
+      document.getElementById('total-points').innerText = currentPoints;
+
+      if (!todayCompletedTasks.includes(activeTaskId)) {
+        todayCompletedTasks.push(activeTaskId);
+        completedRecords[todayStr] = todayCompletedTasks;
+        localStorage.setItem('qian_completed_records', JSON.stringify(completedRecords));
+      }
+
+      renderTaskList();
+      renderRewardList();
+      
+      interactOtter();
+      fireFancyConfetti();
+
+      fileInput.value = '';
+    }
+
+    function fireFancyConfetti() {
+      var count = 200;
+      var defaults = { origin: { y: 0.7 } };
+
+      function fire(particleRatio, opts) {
+        confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) }));
+      }
+
+      fire(0.25, { spread: 26, startVelocity: 55 });
+      fire(0.2, { spread: 60 });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+
+      setTimeout(() => {
+        confetti({
+          shapes: ['star'],
+          colors: ['#FFE082', '#FFB300', '#FF8F00'],
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.5 }
+        });
+      }, 300);
+    }
+
+    init();
+  </script>
+</body>
+</html>
