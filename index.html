@@ -334,7 +334,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const appDoc = db.collection("qian_data").doc("app_state");
+    const stateDoc = db.collection("qian_data").doc("state");
+    const todayDoc = db.collection("qian_data").doc("today_records");
 
     function getTodayString() {
       const today = new Date();
@@ -375,55 +376,64 @@
     let currentPoints = 0;
     let allTasks = [...defaultTasks];
     let allRewards = [...defaultRewards];
-    let completedRecords = {};
-    let photoRecords = {};
 
     const todayStr = getTodayString();
     let todayCompletedTasks = [];
+    let todayPhotos = {};
 
     let activePoints = 0;
     let activeTaskId = null;
     let pendingImageData = null;
 
+    // 🌟 核心修正：分離「系統設定」與「每日打卡紀錄」避免覆蓋
     function initFirebaseListener() {
-      appDoc.onSnapshot((doc) => {
+      // 1. 監聽系統基本狀態（點數、任務清單、禮物清單）
+      stateDoc.onSnapshot((doc) => {
         if (doc.exists) {
           const data = doc.data();
-          currentPoints = data.points || 0;
+          currentPoints = data.points !== undefined ? data.points : 0;
           allTasks = data.tasks || defaultTasks;
           allRewards = data.rewards || defaultRewards;
-          completedRecords = data.completedRecords || {};
-          photoRecords = data.photoRecords || {};
+        } else {
+          saveStateToFirebase();
+        }
+        document.getElementById('total-points').innerText = currentPoints;
+        renderTaskList();
+        renderRewardList();
+        if (document.getElementById('parent-controls').style.display === 'block') {
+          renderManageLists();
+        }
+      });
 
-          todayCompletedTasks = completedRecords[todayStr] || [];
-
-          document.getElementById('total-points').innerText = currentPoints;
-          renderTaskList();
-          renderRewardList();
-          if (document.getElementById('parent-controls').style.display === 'block') {
-            renderManageLists();
+      // 2. 監聽今日打卡紀錄
+      todayDoc.onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.date === todayStr) {
+            todayCompletedTasks = data.completedTasks || [];
+            todayPhotos = data.photos || {};
+          } else {
+            // 跨日自動重置
+            todayCompletedTasks = [];
+            todayPhotos = {};
+            todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
           }
         } else {
-          syncToFirebase();
+          todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
         }
-      }, (error) => {
-        console.error("Firebase 連線錯誤：", error);
+        renderTaskList();
+        if (document.getElementById('parent-controls').style.display === 'block') {
+          renderManageLists();
+        }
       });
     }
 
-    function syncToFirebase() {
-      appDoc.set({
+    function saveStateToFirebase() {
+      stateDoc.set({
         points: currentPoints,
         tasks: allTasks,
-        rewards: allRewards,
-        completedRecords: completedRecords,
-        photoRecords: photoRecords
-      }, { merge: true }).then(() => {
-        console.log("資料同步成功！");
-      }).catch((err) => {
-        console.error("同步失敗：", err);
-        alert("資料儲存失敗，請檢查網路連線或 Firebase 權限！");
-      });
+        rewards: allRewards
+      }, { merge: true });
     }
 
     function init() {
@@ -533,7 +543,7 @@
           const task = allTasks.find(t => t.id === taskId);
           const taskTitle = task ? task.title : '未知任務';
           const points = task ? task.points : 0;
-          const photoData = (photoRecords[todayStr] && photoRecords[todayStr][taskId]) || null;
+          const photoData = todayPhotos[taskId] || null;
 
           const div = document.createElement('div');
           div.className = 'manage-item';
@@ -580,7 +590,7 @@
     }
 
     function viewPhoto(title, taskId) {
-      const photoData = photoRecords[todayStr][taskId];
+      const photoData = todayPhotos[taskId];
       document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
       document.getElementById('photo-view-img').src = photoData;
 
@@ -606,8 +616,7 @@
         if (!isNaN(newPts) && newPts > 0) {
           task.points = newPts;
         }
-
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
@@ -624,36 +633,37 @@
         if (!isNaN(newCost) && newCost > 0) {
           reward.cost = newCost;
         }
-
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
     function revokeCheckin(taskId, points) {
       if (confirm("確定要撤銷這筆打卡嗎？(點數會同步扣除)")) {
         todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);
-        completedRecords[todayStr] = todayCompletedTasks;
-
-        if (photoRecords[todayStr]) {
-          delete photoRecords[todayStr][taskId];
-        }
+        delete todayPhotos[taskId];
 
         currentPoints = Math.max(0, currentPoints - points);
-        syncToFirebase();
+        saveStateToFirebase();
+
+        todayDoc.set({
+          date: todayStr,
+          completedTasks: todayCompletedTasks,
+          photos: todayPhotos
+        });
       }
     }
 
     function deleteTask(id) {
       if (confirm("確定要刪除這個任務嗎？")) {
         allTasks = allTasks.filter(t => t.id !== id);
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
     function deleteReward(id) {
       if (confirm("確定要刪除這個禮物嗎？")) {
         allRewards = allRewards.filter(r => r.id !== id);
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
@@ -664,7 +674,7 @@
         const pts = parseInt(pointsStr) || 10;
         const newTask = { id: 'task_' + Date.now(), title: taskName.trim(), points: pts };
         allTasks.push(newTask);
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
@@ -678,7 +688,7 @@
       if (rewardName && !isNaN(cost) && cost > 0) {
         const newReward = { id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost };
         allRewards.push(newReward);
-        syncToFirebase();
+        saveStateToFirebase();
       }
     }
 
@@ -687,7 +697,7 @@
       const newPts = parseInt(input);
       if (!isNaN(newPts) && newPts >= 0) {
         currentPoints = newPts;
-        syncToFirebase();
+        saveStateToFirebase();
         alert(`點數已更新為 ${currentPoints} 點！`);
       }
     }
@@ -695,7 +705,7 @@
     function redeemReward(title, cost) {
       if (confirm(`確定要花費 ${cost} 點兌換「${title}」嗎？`)) {
         currentPoints -= cost;
-        syncToFirebase();
+        saveStateToFirebase();
         
         interactOtter();
         fireFancyConfetti();
@@ -728,7 +738,6 @@
       fileInput.click();
     }
 
-    // 🌟 核心升級：自動將照片壓縮為最高 600px 寬度的輕量 Base64 圖片
     fileInput.addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
@@ -738,7 +747,7 @@
           const img = new Image();
           img.onload = function() {
             const canvas = document.createElement('canvas');
-            const maxDimension = 600; // 最寬或最高為 600px
+            const maxDimension = 500; // 壓縮尺寸至 500px，確保上傳超級快且不超過容量
             let width = img.width;
             let height = img.height;
 
@@ -759,8 +768,7 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 壓縮品質為 0.6 的 JPEG（檔案通常大小小於 100KB）
-            pendingImageData = canvas.toDataURL('image/jpeg', 0.6);
+            pendingImageData = canvas.toDataURL('image/jpeg', 0.5);
 
             document.getElementById('preview-image').src = pendingImageData;
             document.getElementById('preview-modal').classList.add('active');
@@ -776,32 +784,40 @@
       fileInput.value = '';
     }
 
+    // 打卡確定寫入
     function confirmUpload() {
       const confirmBtn = document.getElementById('confirm-btn');
-      confirmBtn.innerText = "儲存中...";
+      confirmBtn.innerText = "打卡儲存中...";
       confirmBtn.disabled = true;
 
+      // 1. 加點數
       currentPoints += activePoints;
+      saveStateToFirebase();
 
+      // 2. 寫入打卡任務與照片
       if (!todayCompletedTasks.includes(activeTaskId)) {
         todayCompletedTasks.push(activeTaskId);
-        completedRecords[todayStr] = todayCompletedTasks;
+        todayPhotos[activeTaskId] = pendingImageData;
 
-        if (!photoRecords[todayStr]) photoRecords[todayStr] = {};
-        photoRecords[todayStr][activeTaskId] = pendingImageData;
+        todayDoc.set({
+          date: todayStr,
+          completedTasks: todayCompletedTasks,
+          photos: todayPhotos
+        }, { merge: true }).then(() => {
+          closePreviewModal();
+          confirmBtn.innerText = "確定打卡！";
+          confirmBtn.disabled = false;
+
+          interactOtter();
+          fireFancyConfetti();
+          fileInput.value = '';
+        }).catch((err) => {
+          console.error("打卡上傳失敗：", err);
+          alert("儲存失敗，請再試一次！");
+          confirmBtn.innerText = "確定打卡！";
+          confirmBtn.disabled = false;
+        });
       }
-
-      syncToFirebase();
-      
-      setTimeout(() => {
-        closePreviewModal();
-        confirmBtn.innerText = "確定打卡！";
-        confirmBtn.disabled = false;
-        
-        interactOtter();
-        fireFancyConfetti();
-        fileInput.value = '';
-      }, 500);
     }
 
     function fireFancyConfetti() {
