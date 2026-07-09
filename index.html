@@ -185,6 +185,10 @@
       background: #2196F3; color: white; border: none; padding: 4px 8px;
       border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px;
     }
+    .approve-btn {
+      background: #4CAF50; color: white; border: none; padding: 4px 8px;
+      border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px;
+    }
 
     input[type="file"] { display: none; }
   </style>
@@ -252,7 +256,6 @@
     </svg>
   </div>
 
-  <!-- Modal 視窗 -->
   <div class="modal-overlay" id="quote-modal">
     <div class="modal-card">
       <div class="modal-title">✨ 芊芊的每日一句 ✨</div>
@@ -385,9 +388,7 @@
     let activeTaskId = null;
     let pendingImageData = null;
 
-    // 🌟 核心修正：分離「系統設定」與「每日打卡紀錄」避免覆蓋
     function initFirebaseListener() {
-      // 1. 監聽系統基本狀態（點數、任務清單、禮物清單）
       stateDoc.onSnapshot((doc) => {
         if (doc.exists) {
           const data = doc.data();
@@ -405,7 +406,6 @@
         }
       });
 
-      // 2. 監聽今日打卡紀錄
       todayDoc.onSnapshot((doc) => {
         if (doc.exists) {
           const data = doc.data();
@@ -413,7 +413,6 @@
             todayCompletedTasks = data.completedTasks || [];
             todayPhotos = data.photos || {};
           } else {
-            // 跨日自動重置
             todayCompletedTasks = [];
             todayPhotos = {};
             todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
@@ -550,7 +549,11 @@
           div.innerHTML = `
             <span>${taskTitle} (+${points}點)</span>
             <div>
-              ${photoData ? `<button class="view-photo-btn" onclick="viewPhoto('${taskTitle}', '${taskId}')">👀 照片</button>` : ''}
+              ${photoData 
+                ? `<button class="view-photo-btn" onclick="viewPhoto('${taskTitle}', '${taskId}')">👀 照片</button>
+                   <button class="approve-btn" onclick="approveAndClearPhoto('${taskId}')">✅ OK 審核通過</button>` 
+                : `<span style="font-size:0.75rem; color:#4CAF50; font-weight:bold; margin-right:6px;">已審核通過</span>`
+              }
               <button class="delete-btn" onclick="revokeCheckin('${taskId}', ${points})">撤銷</button>
             </div>
           `;
@@ -587,6 +590,23 @@
         `;
         rewardManageBox.appendChild(div);
       });
+    }
+
+    // 🌟 核心新功能：家長 OK 審核通過後，移除照片但保留點數與紀錄
+    function approveAndClearPhoto(taskId) {
+      if (confirm("確認照片 OK 審核通過？這將會刪除照片以節省雲端空間，但保留芊芊的點數與完成紀錄！")) {
+        delete todayPhotos[taskId];
+
+        todayDoc.set({
+          photos: todayPhotos
+        }, { merge: true }).then(() => {
+          alert("審核通過！照片已順利移除，空間已釋放！");
+          renderManageLists();
+        }).catch((err) => {
+          console.error("審核失敗：", err);
+          alert("操作失敗，請再試一次。");
+        });
+      }
     }
 
     function viewPhoto(title, taskId) {
@@ -747,7 +767,7 @@
           const img = new Image();
           img.onload = function() {
             const canvas = document.createElement('canvas');
-            const maxDimension = 500; // 壓縮尺寸至 500px，確保上傳超級快且不超過容量
+            const maxDimension = 500;
             let width = img.width;
             let height = img.height;
 
@@ -784,17 +804,14 @@
       fileInput.value = '';
     }
 
-    // 打卡確定寫入
     function confirmUpload() {
       const confirmBtn = document.getElementById('confirm-btn');
       confirmBtn.innerText = "打卡儲存中...";
       confirmBtn.disabled = true;
 
-      // 1. 加點數
       currentPoints += activePoints;
       saveStateToFirebase();
 
-      // 2. 寫入打卡任務與照片
       if (!todayCompletedTasks.includes(activeTaskId)) {
         todayCompletedTasks.push(activeTaskId);
         todayPhotos[activeTaskId] = pendingImageData;
