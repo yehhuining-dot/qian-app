@@ -9,7 +9,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="芊芊打卡">
 
+  <!-- Confetti 彩帶 -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
     body {
@@ -99,7 +104,6 @@
     }
     .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
 
-    /* 🦦 海獺靈動角色 */
     .otter-wrapper {
       position: fixed; bottom: 12px; right: 15px; z-index: 99;
       display: flex; flex-direction: column; align-items: center; cursor: pointer;
@@ -128,7 +132,6 @@
     @keyframes clapLeft { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(20deg) translate(8px, -4px); } }
     @keyframes clapRight { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(-20deg) translate(-8px, -4px); } }
 
-    /* Modal 彈出視窗 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
@@ -317,6 +320,20 @@
   </div>
 
   <script>
+    // 您的專屬 Firebase 金鑰
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4Ei7xW4lUdEJQiszWsyi7DHNzFjHg44s",
+      authDomain: "appforollie.firebaseapp.com",
+      projectId: "appforollie",
+      storageBucket: "appforollie.firebasestorage.app",
+      messagingSenderId: "164559884250",
+      appId: "1:164559884250:web:1cf1ff4bdc9c209cb9bae3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const appDoc = db.collection("qian_data").doc("app_state");
+
     function getTodayString() {
       const today = new Date();
       return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
@@ -353,25 +370,56 @@
       { id: 'r1000', title: '👑 終極夢幻大獎（家長特別獎勵）', cost: 1000 }
     ];
 
-    let currentPoints = parseInt(localStorage.getItem('qian_points') || '0');
-    let allTasks = JSON.parse(localStorage.getItem('qian_all_tasks') || JSON.stringify(defaultTasks));
-    let allRewards = JSON.parse(localStorage.getItem('qian_all_rewards') || JSON.stringify(defaultRewards));
-
-    let completedRecords = JSON.parse(localStorage.getItem('qian_completed_records') || '{}');
-    let photoRecords = JSON.parse(localStorage.getItem('qian_photo_records') || '{}');
+    let currentPoints = 0;
+    let allTasks = [...defaultTasks];
+    let allRewards = [...defaultRewards];
+    let completedRecords = {};
+    let photoRecords = {};
 
     const todayStr = getTodayString();
-    let todayCompletedTasks = completedRecords[todayStr] || [];
+    let todayCompletedTasks = [];
 
     let activePoints = 0;
     let activeTaskId = null;
     let pendingImageData = null;
 
+    function initFirebaseListener() {
+      appDoc.onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          currentPoints = data.points || 0;
+          allTasks = data.tasks || defaultTasks;
+          allRewards = data.rewards || defaultRewards;
+          completedRecords = data.completedRecords || {};
+          photoRecords = data.photoRecords || {};
+
+          todayCompletedTasks = completedRecords[todayStr] || [];
+
+          document.getElementById('total-points').innerText = currentPoints;
+          renderTaskList();
+          renderRewardList();
+          if (document.getElementById('parent-controls').style.display === 'block') {
+            renderManageLists();
+          }
+        } else {
+          syncToFirebase();
+        }
+      });
+    }
+
+    function syncToFirebase() {
+      appDoc.set({
+        points: currentPoints,
+        tasks: allTasks,
+        rewards: allRewards,
+        completedRecords: completedRecords,
+        photoRecords: photoRecords
+      }, { merge: true });
+    }
+
     function init() {
-      document.getElementById('total-points').innerText = currentPoints;
-      renderTaskList();
-      renderRewardList();
       showRandomQuote();
+      initFirebaseListener();
     }
 
     function interactOtter() {
@@ -522,19 +570,15 @@
       });
     }
 
-    // 觀看照片：暫時隱藏家長後台，避免遮擋
     function viewPhoto(title, taskId) {
       const photoData = photoRecords[todayStr][taskId];
       document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
       document.getElementById('photo-view-img').src = photoData;
 
-      // 隱藏家長後台視窗
       document.getElementById('parent-modal').classList.remove('active');
-      // 顯示照片視窗
       document.getElementById('photo-view-modal').classList.add('active');
     }
 
-    // 關閉照片：重新帶回家長後台
     function closePhotoViewModal() {
       document.getElementById('photo-view-modal').classList.remove('active');
       document.getElementById('parent-modal').classList.add('active');
@@ -554,9 +598,7 @@
           task.points = newPts;
         }
 
-        localStorage.setItem('qian_all_tasks', JSON.stringify(allTasks));
-        renderTaskList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
@@ -574,9 +616,7 @@
           reward.cost = newCost;
         }
 
-        localStorage.setItem('qian_all_rewards', JSON.stringify(allRewards));
-        renderRewardList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
@@ -584,38 +624,27 @@
       if (confirm("確定要撤銷這筆打卡嗎？(點數會同步扣除)")) {
         todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);
         completedRecords[todayStr] = todayCompletedTasks;
-        localStorage.setItem('qian_completed_records', JSON.stringify(completedRecords));
 
         if (photoRecords[todayStr]) {
           delete photoRecords[todayStr][taskId];
-          localStorage.setItem('qian_photo_records', JSON.stringify(photoRecords));
         }
 
         currentPoints = Math.max(0, currentPoints - points);
-        localStorage.setItem('qian_points', currentPoints);
-        document.getElementById('total-points').innerText = currentPoints;
-
-        renderTaskList();
-        renderRewardList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
     function deleteTask(id) {
       if (confirm("確定要刪除這個任務嗎？")) {
         allTasks = allTasks.filter(t => t.id !== id);
-        localStorage.setItem('qian_all_tasks', JSON.stringify(allTasks));
-        renderTaskList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
     function deleteReward(id) {
       if (confirm("確定要刪除這個禮物嗎？")) {
         allRewards = allRewards.filter(r => r.id !== id);
-        localStorage.setItem('qian_all_rewards', JSON.stringify(allRewards));
-        renderRewardList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
@@ -626,9 +655,7 @@
         const pts = parseInt(pointsStr) || 10;
         const newTask = { id: 'task_' + Date.now(), title: taskName.trim(), points: pts };
         allTasks.push(newTask);
-        localStorage.setItem('qian_all_tasks', JSON.stringify(allTasks));
-        renderTaskList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
@@ -642,9 +669,7 @@
       if (rewardName && !isNaN(cost) && cost > 0) {
         const newReward = { id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost };
         allRewards.push(newReward);
-        localStorage.setItem('qian_all_rewards', JSON.stringify(allRewards));
-        renderRewardList();
-        renderManageLists();
+        syncToFirebase();
       }
     }
 
@@ -653,9 +678,7 @@
       const newPts = parseInt(input);
       if (!isNaN(newPts) && newPts >= 0) {
         currentPoints = newPts;
-        localStorage.setItem('qian_points', currentPoints);
-        document.getElementById('total-points').innerText = currentPoints;
-        renderRewardList();
+        syncToFirebase();
         alert(`點數已更新為 ${currentPoints} 點！`);
       }
     }
@@ -663,9 +686,7 @@
     function redeemReward(title, cost) {
       if (confirm(`確定要花費 ${cost} 點兌換「${title}」嗎？`)) {
         currentPoints -= cost;
-        localStorage.setItem('qian_points', currentPoints);
-        document.getElementById('total-points').innerText = currentPoints;
-        renderRewardList();
+        syncToFirebase();
         
         interactOtter();
         fireFancyConfetti();
@@ -719,21 +740,16 @@
     function confirmUpload() {
       closePreviewModal();
       currentPoints += activePoints;
-      localStorage.setItem('qian_points', currentPoints);
-      document.getElementById('total-points').innerText = currentPoints;
 
       if (!todayCompletedTasks.includes(activeTaskId)) {
         todayCompletedTasks.push(activeTaskId);
         completedRecords[todayStr] = todayCompletedTasks;
-        localStorage.setItem('qian_completed_records', JSON.stringify(completedRecords));
 
         if (!photoRecords[todayStr]) photoRecords[todayStr] = {};
         photoRecords[todayStr][activeTaskId] = pendingImageData;
-        localStorage.setItem('qian_photo_records', JSON.stringify(photoRecords));
       }
 
-      renderTaskList();
-      renderRewardList();
+      syncToFirebase();
       
       interactOtter();
       fireFancyConfetti();
