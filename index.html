@@ -99,7 +99,7 @@
     }
     .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
 
-    /* 🦦 方案 C：Q 版搓手拍手小海獺 */
+    /* 🦦 海獺靈動角色 */
     .otter-wrapper {
       position: fixed; bottom: 12px; right: 15px; z-index: 99;
       display: flex; flex-direction: column; align-items: center; cursor: pointer;
@@ -131,7 +131,7 @@
     /* Modal 彈出視窗 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
       display: flex; justify-content: center; align-items: center; z-index: 1000;
       opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     }
@@ -158,7 +158,7 @@
       border-radius: 20px; font-size: 1rem; font-weight: bold; cursor: pointer;
     }
 
-    .preview-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; margin-bottom: 15px; border: 2px solid #DDD; }
+    .preview-img { width: 100%; max-height: 280px; object-fit: contain; border-radius: 16px; margin-bottom: 15px; border: 2px solid #DDD; background: #000; }
     .btn-group { display: flex; gap: 10px; justify-content: center; }
     .cancel-btn { background: #E0E0E0; color: #616161; }
 
@@ -270,11 +270,11 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="photo-view-modal">
+  <div class="modal-overlay" id="photo-view-modal" style="z-index: 1001;">
     <div class="modal-card">
       <div class="modal-title" id="photo-view-title">📷 打卡照片佐證</div>
       <img id="photo-view-img" class="preview-img" src="" alt="打卡紀錄照片">
-      <button class="modal-btn cancel-btn" onclick="closePhotoViewModal()">關閉</button>
+      <button class="modal-btn" style="background:#2196F3; color:white;" onclick="closePhotoViewModal()">返回家長後台 ↩️</button>
     </div>
   </div>
 
@@ -466,7 +466,6 @@
     }
 
     function renderManageLists() {
-      // 1. 今日打卡相片審核清單
       const historyBox = document.getElementById('manage-history-list');
       historyBox.innerHTML = '';
 
@@ -492,7 +491,6 @@
         });
       }
 
-      // 2. 任務編輯與刪除清單
       const taskManageBox = document.getElementById('manage-tasks-list');
       taskManageBox.innerHTML = '';
       allTasks.forEach(task => {
@@ -508,7 +506,6 @@
         taskManageBox.appendChild(div);
       });
 
-      // 3. 禮物編輯與刪除清單
       const rewardManageBox = document.getElementById('manage-rewards-list');
       rewardManageBox.innerHTML = '';
       allRewards.forEach(reward => {
@@ -525,7 +522,24 @@
       });
     }
 
-    // 編輯任務
+    // 觀看照片：暫時隱藏家長後台，避免遮擋
+    function viewPhoto(title, taskId) {
+      const photoData = photoRecords[todayStr][taskId];
+      document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
+      document.getElementById('photo-view-img').src = photoData;
+
+      // 隱藏家長後台視窗
+      document.getElementById('parent-modal').classList.remove('active');
+      // 顯示照片視窗
+      document.getElementById('photo-view-modal').classList.add('active');
+    }
+
+    // 關閉照片：重新帶回家長後台
+    function closePhotoViewModal() {
+      document.getElementById('photo-view-modal').classList.remove('active');
+      document.getElementById('parent-modal').classList.add('active');
+    }
+
     function editTask(id) {
       const task = allTasks.find(t => t.id === id);
       if (!task) return;
@@ -546,7 +560,6 @@
       }
     }
 
-    // 編輯禮物
     function editReward(id) {
       const reward = allRewards.find(r => r.id === id);
       if (!reward) return;
@@ -565,17 +578,6 @@
         renderRewardList();
         renderManageLists();
       }
-    }
-
-    function viewPhoto(title, taskId) {
-      const photoData = photoRecords[todayStr][taskId];
-      document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
-      document.getElementById('photo-view-img').src = photoData;
-      document.getElementById('photo-view-modal').classList.add('active');
-    }
-
-    function closePhotoViewModal() {
-      document.getElementById('photo-view-modal').classList.remove('active');
     }
 
     function revokeCheckin(taskId, points) {
