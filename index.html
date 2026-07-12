@@ -1,980 +1,973 @@
-{\rtf1\ansi\ansicpg950\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>芊芊專屬打卡小程式</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="芊芊打卡">
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="zh-TW">\
-<head>\
-  <meta charset="UTF-8">\
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\
-  <title>\uc0\u33418 \u33418 \u23560 \u23660 \u25171 \u21345 \u23567 \u31243 \u24335 </title>\
-  \
-  <meta name="apple-mobile-web-app-capable" content="yes">\
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\
-  <meta name="apple-mobile-web-app-title" content="\uc0\u33418 \u33418 \u25171 \u21345 ">\
-\
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>\
-\
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>\
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>\
-\
-  <style>\
-    /* CSS \uc0\u35722 \u25976 \u23450 \u32681 \u38928 \u35373 \u33394 \u35519  (\u27320 \u27308 \u40643 ) */\
-    :root \{\
-      --bg-color: #FFFDE7;\
-      --bg-pattern: #FBC02D;\
-      --main-title: #F57F17;\
-      --card-border: #FFF59D;\
-      --points-color: #F57F17;\
-      --tab-active: #FBC02D;\
-      --tab-active-text: #3E2723;\
-      --btn-bg: #FBC02D;\
-      --btn-text: #3E2723;\
-      --badge-bg: #FFF59D;\
-      --badge-text: #F57F17;\
-    \}\
-\
-    body \{\
-      margin: 0;\
-      padding: 20px 15px 160px 15px;\
-      background-color: var(--bg-color);\
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="%23FBC02D" stroke-width="3" opacity="0.15"/><path d="M50 50 L50 10 M50 50 L85 67 M50 50 L15 67 M50 50 L50 90 M50 50 L15 33 M50 50 L85 33" stroke="%23FBC02D" stroke-width="2" opacity="0.15"/></svg>');\
-      background-repeat: repeat;\
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;\
-      color: #4E342E;\
-      display: flex;\
-      flex-direction: column;\
-      align-items: center;\
-      transition: background-color 0.4s ease;\
-    \}\
-\
-    .container \{ width: 100%; max-width: 420px; \}\
-\
-    .header-bar \{\
-      display: flex;\
-      justify-content: space-between;\
-      align-items: center;\
-      margin-bottom: 12px;\
-    \}\
-\
-    .header-title \{\
-      font-size: 1.4rem;\
-      font-weight: 900;\
-      color: var(--main-title);\
-      text-shadow: 1px 1px 0px #FFF;\
-      margin: 0;\
-    \}\
-\
-    .theme-picker-btn \{\
-      background: rgba(255, 255, 255, 0.85);\
-      border: 2px solid var(--tab-active);\
-      padding: 6px 12px;\
-      border-radius: 20px;\
-      font-size: 0.85rem;\
-      font-weight: bold;\
-      color: var(--tab-active-text);\
-      cursor: pointer;\
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);\
-      backdrop-filter: blur(4px);\
-    \}\
-\
-    .dashboard \{\
-      background: rgba(255, 255, 255, 0.92);\
-      backdrop-filter: blur(10px);\
-      border-radius: 24px;\
-      padding: 16px;\
-      text-align: center;\
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);\
-      border: 3px solid var(--card-border);\
-      margin-bottom: 20px;\
-      transition: border-color 0.4s ease;\
-    \}\
-\
-    .points-title \{ font-size: 1rem; color: #795548; font-weight: bold; \}\
-    .points-display \{ font-size: 3.2rem; font-weight: 900; color: var(--points-color); margin: 2px 0; \}\
-\
-    .nav-tabs \{ display: flex; gap: 10px; margin-bottom: 15px; \}\
-    .tab-btn \{\
-      flex: 1; padding: 10px; border: none; border-radius: 16px;\
-      font-size: 1rem; font-weight: bold; background: rgba(255, 255, 255, 0.65);\
-      color: #795548; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.05);\
-      transition: all 0.3s ease;\
-    \}\
-    .tab-btn.active \{\
-      background: var(--tab-active); color: var(--tab-active-text);\
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);\
-    \}\
-\
-    .section-header \{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; \}\
-    .section-title \{ color: #5D4037; font-size: 1.2rem; font-weight: bold; margin: 0; \}\
-\
-    .action-btn \{\
-      background: #81C784; color: white; border: none; padding: 6px 12px;\
-      border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;\
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);\
-    \}\
-\
-    .card-list \{ display: flex; flex-direction: column; gap: 12px; \}\
-    .card-item \{\
-      background: rgba(255, 255, 255, 0.92); border-radius: 18px; padding: 14px 16px;\
-      display: flex; justify-content: space-between; align-items: center;\
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease;\
-    \}\
-    .card-item.completed \{ background: rgba(240, 240, 240, 0.75); border: 1px solid #C8E6C9; \}\
-    .card-info h3 \{ margin: 0 0 4px 0; font-size: 1.05rem; color: #4E342E; \}\
-    .card-item.completed .card-info h3 \{ color: #A1887F; text-decoration: line-through; \}\
-\
-    .task-badge \{\
-      display: inline-block; background: var(--badge-bg); color: var(--badge-text);\
-      padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;\
-    \}\
-\
-    .upload-btn \{\
-      background: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 14px;\
-      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;\
-      box-shadow: 0 3px 6px rgba(0,0,0,0.08);\
-    \}\
-    .upload-btn.done \{ background: #A5D6A7; color: #1B5E20; cursor: default; box-shadow: none; \}\
-\
-    .redeem-btn \{\
-      background: #FFB74D; color: white; border: none; padding: 10px 14px;\
-      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;\
-      box-shadow: 0 3px 8px rgba(255, 183, 77, 0.3);\
-    \}\
-    .redeem-btn.disabled \{ background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; \}\
-    .redeem-btn.pending \{ background: #B0BEC5; color: white; cursor: default; box-shadow: none; \}\
-\
-    /* \uc0\u55358 \u56742  \u26041 \u26696  C \u28023 \u29562 \u35282 \u33394  */\
-    .otter-wrapper \{\
-      position: fixed; bottom: 12px; right: 15px; z-index: 99;\
-      display: flex; flex-direction: column; align-items: center; cursor: pointer;\
-    \}\
-\
-    .otter-bubble \{\
-      background: #FFF; padding: 8px 14px; border-radius: 18px; font-size: 0.85rem;\
-      font-weight: bold; color: #6D4C41; box-shadow: 0 4px 12px rgba(0,0,0,0.1);\
-      border: 2px solid var(--tab-active); margin-bottom: 6px; white-space: nowrap;\
-      animation: floatBubble 2.5s infinite ease-in-out;\
-    \}\
-\
-    .otter-svg-card \{\
-      width: 110px; height: 120px; animation: otterFloat 3s infinite ease-in-out;\
-      filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.08));\
-    \}\
-\
-    .paw-left, .paw-right \{ transform-origin: center; transition: transform 0.15s; \}\
-    .otter-svg-card.active \{ animation: otterJump 0.4s infinite alternate ease-in-out !important; \}\
-    .otter-svg-card.active .paw-left \{ animation: clapLeft 0.18s infinite alternate ease-in-out; \}\
-    .otter-svg-card.active .paw-right \{ animation: clapRight 0.18s infinite alternate ease-in-out; \}\
-\
-    @keyframes otterFloat \{ 0%, 100% \{ transform: translateY(0) rotate(0deg); \} 50% \{ transform: translateY(-7px) rotate(2deg); \} \}\
-    @keyframes floatBubble \{ 0%, 100% \{ transform: translateY(0); \} 50% \{ transform: translateY(-4px); \} \}\
-    @keyframes otterJump \{ 0% \{ transform: translateY(0) scale(1); \} 100% \{ transform: translateY(-12px) scale(1.06); \} \}\
-    @keyframes clapLeft \{ 0% \{ transform: rotate(0deg) translate(0, 0); \} 100% \{ transform: rotate(20deg) translate(8px, -4px); \} \}\
-    @keyframes clapRight \{ 0% \{ transform: rotate(0deg) translate(0, 0); \} 100% \{ transform: rotate(-20deg) translate(-8px, -4px); \} \}\
-\
-    /* Modal \uc0\u24392 \u20986 \u35222 \u31383  */\
-    .modal-overlay \{\
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;\
-      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);\
-      display: flex; justify-content: center; align-items: center; z-index: 1000;\
-      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;\
-    \}\
-    .modal-overlay.active \{ opacity: 1; pointer-events: auto; \}\
-    .modal-card \{\
-      background: var(--bg-color); width: 85%; max-width: 360px; border-radius: 24px;\
-      padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 4px solid var(--card-border);\
-      text-align: center; transform: scale(0.8); transition: transform 0.3s ease;\
-      max-height: 85vh; overflow-y: auto;\
-    \}\
-    .modal-overlay.active .modal-card \{ transform: scale(1); \}\
-    .modal-title \{ font-size: 1.2rem; color: #5D4037; font-weight: bold; margin-bottom: 12px; \}\
-\
-    .quote-box \{\
-      background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 20px;\
-      text-align: left; border: 1px solid var(--card-border);\
-    \}\
-    .quote-zh \{ font-size: 1.1rem; font-weight: bold; color: var(--main-title); margin-bottom: 6px; \}\
-    .quote-en \{ font-size: 0.9rem; color: #5D4037; margin-bottom: 4px; \}\
-    .quote-jp \{ font-size: 0.9rem; color: #1B5E20; \}\
-\
-    .modal-btn \{\
-      background: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 24px;\
-      border-radius: 20px; font-size: 1rem; font-weight: bold; cursor: pointer;\
-    \}\
-\
-    .preview-img \{ width: 100%; max-height: 280px; object-fit: contain; border-radius: 16px; margin-bottom: 15px; border: 2px solid #DDD; background: #000; \}\
-    .btn-group \{ display: flex; gap: 10px; justify-content: center; \}\
-    .cancel-btn \{ background: #E0E0E0; color: #616161; \}\
-\
-    /* \uc0\u37197 \u33394 \u36984 \u25799 \u22120 \u39080 \u26684  */\
-    .theme-grid \{\
-      display: grid;\
-      grid-template-columns: repeat(2, 1fr);\
-      gap: 10px;\
-      margin-bottom: 15px;\
-    \}\
-    .theme-item \{\
-      display: flex;\
-      align-items: center;\
-      gap: 8px;\
-      padding: 8px 12px;\
-      background: #FFF;\
-      border-radius: 14px;\
-      border: 2px solid #EEE;\
-      cursor: pointer;\
-      font-size: 0.85rem;\
-      font-weight: bold;\
-      color: #4E342E;\
-      transition: all 0.2s ease;\
-    \}\
-    .theme-item.active \{\
-      border-color: #4CAF50;\
-      background: #E8F5E9;\
-    \}\
-    .theme-color-dot \{\
-      width: 18px;\
-      height: 18px;\
-      border-radius: 50%;\
-      border: 1px solid rgba(0,0,0,0.1);\
-    \}\
-\
-    .manage-list \{ text-align: left; margin-bottom: 15px; \}\
-    .manage-item \{\
-      display: flex; justify-content: space-between; align-items: center;\
-      background: #FFF; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px;\
-      border: 1px solid var(--card-border); font-size: 0.9rem;\
-    \}\
-    .edit-btn \{ background: #FFB74D; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; \}\
-    .delete-btn \{ background: #FF5252; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; \}\
-    .view-photo-btn \{ background: #2196F3; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; \}\
-    .approve-btn \{ background: #4CAF50; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; \}\
-\
-    input[type="file"] \{ display: none; \}\
-  </style>\
-</head>\
-<body>\
-\
-  <div class="container">\
-    <div class="header-bar">\
-      <h2 class="header-title">\uc0\u55356 \u57144  \u33418 \u33418 \u25171 \u21345 \u23567 \u31243 \u24335 </h2>\
-      <button class="theme-picker-btn" onclick="openThemeModal()">\uc0\u55356 \u57256  \u20027 \u38988 \u37197 \u33394 </button>\
-    </div>\
-\
-    <div class="dashboard">\
-      <div class="points-title">\uc0\u11088  \u33418 \u33418 \u32047 \u31309 \u30340 \u27054 \u35709 \u40670 \u25976  \u11088 </div>\
-      <div class="points-display" id="total-points">0</div>\
-      <small style="color: #8D6E63;">\uc0\u25345 \u32396 \u21162 \u21147 \u65292 \u28310 \u20633 \u25563 \u22823 \u29518 \u65281 </small>\
-    </div>\
-\
-    <div class="nav-tabs">\
-      <button class="tab-btn active" id="tab-tasks-btn" onclick="switchTab('tasks')">\uc0\u55357 \u56523  \u25171 \u21345 \u20219 \u21209 </button>\
-      <button class="tab-btn" id="tab-shop-btn" onclick="switchTab('shop')">\uc0\u55356 \u57217  \u31150 \u29289 \u21830 \u24215 </button>\
-    </div>\
-\
-    <div id="view-tasks">\
-      <div class="section-header">\
-        <h3 class="section-title">\uc0\u20170 \u26085 \u25171 \u21345 \u20219 \u21209 </h3>\
-      </div>\
-      <div class="card-list" id="task-list"></div>\
-    </div>\
-\
-    <div id="view-shop" style="display: none;">\
-      <div class="section-header">\
-        <h3 class="section-title">\uc0\u29518 \u21237 \u20812 \u25563 \u20013 \u24515 </h3>\
-        <button class="action-btn" style="background:#8D6E63" onclick="openParentModal()">\uc0\u9881 \u65039  \u23478 \u38263 \u31649 \u29702 </button>\
-      </div>\
-      <div class="card-list" id="reward-list"></div>\
-    </div>\
-  </div>\
-\
-  <div class="otter-wrapper" onclick="interactOtter()">\
-    <div class="otter-bubble" id="otter-text">\uc0\u25293 \u25293 \u25163 \u65281 \u33418 \u33418 \u21152 \u27833 \u21908 \u65281 \u55357 \u56399 </div>\
-    <svg class="otter-svg-card" id="otter-svg" viewBox="0 0 120 130">\
-      <defs>\
-        <linearGradient id="otterFur" x1="0" y1="0" x2="0" y2="1">\
-          <stop offset="0%" stop-color="#E0D5C1" />\
-          <stop offset="100%" stop-color="#CBBCA5" />\
-        </linearGradient>\
-      </defs>\
-      <g stroke="#7A6858" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">\
-        <ellipse cx="42" cy="118" rx="10" ry="6" fill="#CBBCA5" />\
-        <ellipse cx="78" cy="118" rx="10" ry="6" fill="#CBBCA5" />\
-        <path d="M 32 65 C 22 80, 22 110, 38 118 C 48 122, 72 122, 82 118 C 98 110, 98 80, 88 65 Z" fill="url(#otterFur)" />\
-        <path d="M 40 70 C 32 82, 32 106, 42 112 C 50 115, 70 115, 78 112 C 88 106, 88 82, 80 70 Z" fill="#FFFFFF" stroke="none" />\
-        <circle cx="60" cy="45" r="32" fill="url(#otterFur)" />\
-        <circle cx="31" cy="32" r="5" fill="#E0D5C1" />\
-        <circle cx="89" cy="32" r="5" fill="#E0D5C1" />\
-        <circle cx="31" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />\
-        <circle cx="89" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />\
-        <ellipse cx="42" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />\
-        <ellipse cx="78" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />\
-        <path d="M 45 42 Q 49 38, 53 42" fill="none" stroke="#524336" stroke-width="2.5" />\
-        <path d="M 67 42 Q 71 38, 75 42" fill="none" stroke="#524336" stroke-width="2.5" />\
-        <ellipse cx="60" cy="48" rx="3.5" ry="2.5" fill="#524336" stroke="none" />\
-        <path d="M 54 52 Q 60 56, 60 52 Q 60 56, 66 52" fill="none" stroke="#524336" stroke-width="2.5" />\
-        <g class="paw-left"><path d="M 30 75 C 38 82, 50 82, 52 72 C 46 68, 36 68, 30 75 Z" fill="#E0D5C1" /></g>\
-        <g class="paw-right"><path d="M 90 75 C 82 82, 70 82, 68 72 C 74 68, 84 68, 90 75 Z" fill="#E0D5C1" /></g>\
-      </g>\
-    </svg>\
-  </div>\
-\
-  <div class="modal-overlay" id="theme-modal">\
-    <div class="modal-card">\
-      <div class="modal-title">\uc0\u55356 \u57256  \u25361 \u36984 \u21916 \u27489 \u30340 \u39340 \u21345 \u40845 \u37197 \u33394 </div>\
-      <div class="theme-grid" id="theme-grid"></div>\
-      <button class="modal-btn" onclick="closeThemeModal()">\uc0\u30906 \u23450 \u22871 \u29992 </button>\
-    </div>\
-  </div>\
-\
-  <div class="modal-overlay" id="quote-modal">\
-    <div class="modal-card">\
-      <div class="modal-title">\uc0\u10024  \u33418 \u33418 \u30340 \u27599 \u26085 \u19968 \u21477  \u10024 </div>\
-      <div class="quote-box">\
-        <div class="quote-zh" id="q-zh"></div>\
-        <div class="quote-en" id="q-en"></div>\
-        <div class="quote-jp" id="q-jp"></div>\
-      </div>\
-      <button class="modal-btn" onclick="closeQuoteModal()">\uc0\u25910 \u21040 \u65281 \u20170 \u22825 \u20063 \u35201 \u21152 \u27833  \u9728 \u65039 </button>\
-    </div>\
-  </div>\
-\
-  <div class="modal-overlay" id="preview-modal">\
-    <div class="modal-card">\
-      <div class="modal-title">\uc0\u55357 \u56567  \u30906 \u35469 \u19978 \u20659 \u29031 \u29255 \u20304 \u35657 </div>\
-      <img id="preview-image" class="preview-img" src="" alt="\uc0\u38928 \u35261 \u29031 \u29255 ">\
-      <div class="btn-group">\
-        <button class="modal-btn cancel-btn" onclick="closePreviewModal()">\uc0\u37325 \u25293 </button>\
-        <button class="modal-btn" id="confirm-btn" onclick="confirmUpload()">\uc0\u30906 \u23450 \u25171 \u21345 \u65281 </button>\
-      </div>\
-    </div>\
-  </div>\
-\
-  <div class="modal-overlay" id="photo-view-modal" style="z-index: 1001;">\
-    <div class="modal-card">\
-      <div class="modal-title" id="photo-view-title">\uc0\u55357 \u56567  \u25171 \u21345 \u29031 \u29255 \u20304 \u35657 </div>\
-      <img id="photo-view-img" class="preview-img" src="" alt="\uc0\u25171 \u21345 \u32000 \u37636 \u29031 \u29255 ">\
-      <button class="modal-btn" style="background:#2196F3; color:white;" onclick="closePhotoViewModal()">\uc0\u36820 \u22238 \u23478 \u38263 \u24460 \u21488  \u8617 \u65039 </button>\
-    </div>\
-  </div>\
-\
-  <div class="modal-overlay" id="parent-modal">\
-    <div class="modal-card">\
-      <div class="modal-title">\uc0\u9881 \u65039  \u23478 \u38263 \u31649 \u29702 \u24460 \u21488 </div>\
-      \
-      <div id="parent-auth">\
-        <input type="password" id="parent-pin" placeholder="\uc0\u35531 \u36664 \u20837 \u23478 \u38263 \u23494 \u30908 " style="padding: 10px; font-size: 1rem; width: 70%; border-radius: 12px; border: 1px solid #CCC; text-align: center; margin: 15px 0;">\
-        <br>\
-        <div class="btn-group">\
-          <button class="modal-btn cancel-btn" onclick="closeParentModal()">\uc0\u21462 \u28040 </button>\
-          <button class="modal-btn" onclick="checkParentPin()">\uc0\u30331 \u20837 </button>\
-        </div>\
-      </div>\
-\
-      <div id="parent-controls" style="display: none; text-align: left;">\
-        <hr style="border: 0.5px solid #FFE082; margin: 10px 0 15px 0;">\
-\
-        <h4 style="margin: 5px 0; color: #D32F2F;">\uc0\u55356 \u57217  \u33418 \u33418 \u30340 \u31150 \u29289 \u20812 \u25563 \u30003 \u35531 \u65306 </h4>\
-        <div class="manage-list" id="manage-requests-list" style="margin-bottom:15px;"></div>\
-\
-        <h4 style="margin: 5px 0; color: #E65100;">\uc0\u55357 \u56567  \u20170 \u26085 \u25171 \u21345 \u30456 \u29255 \u23529 \u26680 \u65306 </h4>\
-        <div class="manage-list" id="manage-history-list"></div>\
-\
-        <hr style="border: 0.5px solid #FFE082; margin: 15px 0;">\
-        \
-        <button class="action-btn" style="background:#FF9800; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewReward()">\uc0\u10133  \u26032 \u22686 \u31150 \u29289 \u38917 \u30446 </button>\
-        <button class="action-btn" style="background:#81C784; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewTask()">\uc0\u10133  \u26032 \u22686 \u25171 \u21345 \u20219 \u21209 </button>\
-        <button class="action-btn" style="background:#64B5F6; width:100%; padding: 10px; margin-bottom: 15px;" onclick="adjustPointsDirectly()">\uc0\u55358 \u56985  \u25163 \u21205 \u35519 \u25972 \u33418 \u33418 \u30340 \u40670 \u25976 </button>\
-\
-        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">\uc0\u55357 \u56523  \u29694 \u26377 \u25171 \u21345 \u20219 \u21209 \u65288 \u21487 \u32232 \u36655 /\u21034 \u38500 \u65289 \u65306 </h4>\
-        <div class="manage-list" id="manage-tasks-list"></div>\
-\
-        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">\uc0\u55356 \u57217  \u29694 \u26377 \u31150 \u29289 \u38917 \u30446 \u65288 \u21487 \u32232 \u36655 /\u21034 \u38500 \u65289 \u65306 </h4>\
-        <div class="manage-list" id="manage-rewards-list"></div>\
-\
-        <div style="margin-top: 15px; text-align: center;">\
-          <button class="modal-btn cancel-btn" onclick="closeParentModal()">\uc0\u23436 \u25104 \u20006 \u38626 \u38283 </button>\
-        </div>\
-      </div>\
-    </div>\
-  </div>\
-\
-  <script>\
-    const firebaseConfig = \{\
-      apiKey: "AIzaSyC4Ei7xW4lUdEJQiszWsyi7DHNzFjHg44s",\
-      authDomain: "appforollie.firebaseapp.com",\
-      projectId: "appforollie",\
-      storageBucket: "appforollie.firebasestorage.app",\
-      messagingSenderId: "164559884250",\
-      appId: "1:164559884250:web:1cf1ff4bdc9c209cb9bae3"\
-    \};\
-\
-    firebase.initializeApp(firebaseConfig);\
-    const db = firebase.firestore();\
-    const stateDoc = db.collection("qian_data").doc("state");\
-    const todayDoc = db.collection("qian_data").doc("today_records");\
-\
-    // \uc0\u55356 \u57256  10 \u31278 \u31934 \u36984 \u39340 \u21345 \u40845 \u20027 \u38988 \u33394 \u35519 \u35373 \u23450 \
-    const macaronThemes = [\
-      \{ id: 'yellow', name: '\uc0\u27320 \u27308 \u40643 ', bg: '#FFFDE7', border: '#FFF59D', title: '#F57F17', btn: '#FBC02D', text: '#3E2723', badgeBg: '#FFF59D', badgeText: '#F57F17' \},\
-      \{ id: 'pink', name: '\uc0\u27387 \u33457 \u31881 ', bg: '#FCE4EC', border: '#F8BBD0', title: '#C2185B', btn: '#F48FB1', text: '#880E4F', badgeBg: '#F8BBD0', badgeText: '#C2185B' \},\
-      \{ id: 'mint', name: '\uc0\u34180 \u33655 \u32160 ', bg: '#E8F5E9', border: '#C8E6C9', title: '#2E7D32', btn: '#81C784', text: '#1B5E20', badgeBg: '#C8E6C9', badgeText: '#2E7D32' \},\
-      \{ id: 'sky', name: '\uc0\u22825 \u31354 \u34253 ', bg: '#E1F5FE', border: '#B3E5FC', title: '#0288D1', btn: '#4FC3F7', text: '#01579B', badgeBg: '#B3E5FC', badgeText: '#0288D1' \},\
-      \{ id: 'purple', name: '\uc0\u34224 \u34915 \u33609 \u32043 ', bg: '#F3E5F5', border: '#E1BEE7', title: '#7B1FA2', btn: '#CE93D8', text: '#4A148C', badgeBg: '#E1BEE7', badgeText: '#7B1FA2' \},\
-      \{ id: 'peach', name: '\uc0\u34588 \u26691 \u27224 ', bg: '#FBE9E7', border: '#FFCCBC', title: '#D84315', btn: '#FF8A65', text: '#BF360C', badgeBg: '#FFCCBC', badgeText: '#D84315' \},\
-      \{ id: 'cream', name: '\uc0\u22902 \u27833 \u30333 ', bg: '#FAF8F5', border: '#EFEBE9', title: '#5D4037', btn: '#D7CCC8', text: '#3E2723', badgeBg: '#EFEBE9', badgeText: '#5D4037' \},\
-      \{ id: 'matcha', name: '\uc0\u25273 \u33590 \u32160 ', bg: '#F1F8E9', border: '#DCEDC8', title: '#558B2F', btn: '#AED581', text: '#33691E', badgeBg: '#DCEDC8', badgeText: '#558B2F' \},\
-      \{ id: 'ocean', name: '\uc0\u28023 \u40573 \u34253 ', bg: '#E0F2F1', border: '#B2DFDB', title: '#00695C', btn: '#4DB6AC', text: '#004D40', badgeBg: '#B2DFDB', badgeText: '#00695C' \},\
-      \{ id: 'grape', name: '\uc0\u33889 \u33796 \u32043 ', bg: '#EDE7F6', border: '#D1C4E9', title: '#512DA8', btn: '#9FA8DA', text: '#311B92', badgeBg: '#D1C4E9', badgeText: '#512DA8' \}\
-    ];\
-\
-    let currentThemeId = 'yellow';\
-\
-    function applyTheme(themeId) \{\
-      const theme = macaronThemes.find(t => t.id === themeId) || macaronThemes[0];\
-      currentThemeId = theme.id;\
-\
-      const root = document.documentElement;\
-      root.style.setProperty('--bg-color', theme.bg);\
-      root.style.setProperty('--card-border', theme.border);\
-      root.style.setProperty('--main-title', theme.title);\
-      root.style.setProperty('--points-color', theme.title);\
-      root.style.setProperty('--tab-active', theme.btn);\
-      root.style.setProperty('--tab-active-text', theme.text);\
-      root.style.setProperty('--btn-bg', theme.btn);\
-      root.style.setProperty('--btn-text', theme.text);\
-      root.style.setProperty('--badge-bg', theme.badgeBg);\
-      root.style.setProperty('--badge-text', theme.badgeText);\
-\
-      renderThemeGrid();\
-    \}\
-\
-    function openThemeModal() \{ document.getElementById('theme-modal').classList.add('active'); \}\
-    function closeThemeModal() \{ document.getElementById('theme-modal').classList.remove('active'); saveStateToFirebase(); \}\
-\
-    function renderThemeGrid() \{\
-      const grid = document.getElementById('theme-grid');\
-      grid.innerHTML = '';\
-      macaronThemes.forEach(t => \{\
-        const item = document.createElement('div');\
-        item.className = `theme-item $\{t.id === currentThemeId ? 'active' : ''\}`;\
-        item.onclick = () => applyTheme(t.id);\
-        item.innerHTML = `\
-          <div class="theme-color-dot" style="background: $\{t.btn\}"></div>\
-          <span>$\{t.name\}</span>\
-        `;\
-        grid.appendChild(item);\
-      \});\
-    \}\
-\
-    function getTodayString() \{\
-      const today = new Date();\
-      return `$\{today.getFullYear()\}-$\{today.getMonth() + 1\}-$\{today.getDate()\}`;\
-    \}\
-\
-    const multiQuotes = [\
-      \{ zh: "\uc0\u20170 \u22825 \u30340 \u33418 \u33418 \u21448 \u27604 \u26152 \u22825 \u26356 \u26834 \u20102 \u65281 ", en: "You are getting better every single day!", jp: "\u20170 \u26085 \u12398 \u12481 \u12455 \u12531 \u12481 \u12455 \u12531 \u12399 \u26152 \u26085 \u12424 \u12426 \u32032 \u26228 \u12425 \u12375 \u12356 \u65281 " \},\
-      \{ zh: "\uc0\u22533 \u25345 \u21040 \u24213 \u30340 \u23567 \u33521 \u38596 \u26368 \u21426 \u23475 \u65281 ", en: "Superstar who keeps going to the end!", jp: "\u26368 \u24460 \u12414 \u12391 \u38929 \u24373 \u12427 \u23567 \u12373 \u12394 \u12498 \u12540 \u12525 \u12540 \u12364 \u19968 \u30058 \u12377 \u12372 \u12356 \u65281 " \},\
-      \{ zh: "\uc0\u27599 \u19968 \u20491 \u23567 \u21162 \u21147 \u65292 \u37117 \u26371 \u35722 \u25104 \u22823 \u22818 \u24819 \u65281 ", en: "Small efforts turn into big dreams!", jp: "\u23567 \u12373 \u12394 \u21162 \u21147 \u12364 \u22823 \u12365 \u12394 \u22818 \u12395 \u22793 \u12431 \u12427 \u12424 \u65281 " \},\
-      \{ zh: "\uc0\u20170 \u22825 \u20063 \u35201 \u24118 \u33879 \u29158 \u29211 \u30340 \u24494 \u31505 \u23436 \u25104 \u20219 \u21209 \u21908 \u65281 ", en: "Complete your tasks with a big smile today!", jp: "\u20170 \u26085 \u12418 \u32032 \u25973 \u12394 \u31505 \u38996 \u12391 \u20219 \u21209 \u12434 \u23436 \u20102 \u12375 \u12424 \u12358 \u65281 " \}\
-    ];\
-\
-    const otterDialogues = [\
-      "\uc0\u25293 \u25293 \u25163 \u65281 \u33418 \u33418 \u26368 \u26834 \u20102 \u65281 \u55357 \u56399 ",\
-      "\uc0\u20170 \u22825 \u21448 \u32047 \u31309 \u20102 \u22909 \u22810 \u40670 \u25976 \u21602 \u65281 \u10024 ",\
-      "\uc0\u35352 \u24471 \u22825 \u22825 \u25171 \u21345 \u65292 \u25563 \u22823 \u31150 \u29289 \u21908 \u65281 \u55356 \u57217 ",\
-      "\uc0\u28858 \u20320 \u21152 \u27833 \u65281 \u33418 \u33418 \u34909 \u21568 \u65281 \u55358 \u56742 ",\
-      "\uc0\u25619 \u25619 \u25163 \u65281 \u33418 \u33418 \u20170 \u22825 \u36229 \u32026 \u26834 \u65281 \u55357 \u56399 "\
-    ];\
-\
-    let defaultTasks = [\
-      \{ id: 'homework', title: '\uc0\u55357 \u56541  \u23436 \u25104 \u23416 \u26657 \u20316 \u26989 ', points: 10 \},\
-      \{ id: 'housework', title: '\uc0\u55358 \u56825  \u20027 \u21205 \u24171 \u24537 \u23478 \u20107 ', points: 5 \},\
-      \{ id: 'reading', title: '\uc0\u55357 \u56534  \u23560 \u24515 \u38321 \u35712  20 \u20998 \u37912 ', points: 10 \},\
-      \{ id: 'drawing', title: '\uc0\u55356 \u57256  \u23436 \u25104 \u32362 \u30059 \u21109 \u20316 ', points: 10 \},\
-      \{ id: 'sport', title: '\uc0\u55356 \u57283  \u36939 \u21205  30 \u20998 \u37912 ', points: 10 \}\
-    ];\
-\
-    let defaultRewards = [\
-      \{ id: 'r100', title: '\uc0\u55356 \u57190  \u32654 \u21619 \u23567 \u20912 \u28103 \u28107  / \u40670 \u24515 ', cost: 100 \},\
-      \{ id: 'r200', title: '\uc0\u9999 \u65039  \u25361 \u36984 \u21916 \u27489 \u30340 \u25991 \u20855  / \u29609 \u36938 \u25138  30 \u20998 \u37912 ', cost: 200 \},\
-      \{ id: 'r300', title: '\uc0\u55356 \u57260  \u35264 \u30475 \u19968 \u37096 \u31934 \u37319 \u38651 \u24433  / \u36023 \u25925 \u20107 \u32362 \u26412 ', cost: 300 \},\
-      \{ id: 'r500', title: '\uc0\u55356 \u57249  \u21435 \u20844 \u22290 \u37326 \u39184  / \u27138 \u22290 \u21322 \u26085 \u36938 ', cost: 500 \},\
-      \{ id: 'r1000', title: '\uc0\u55357 \u56401  \u32066 \u26997 \u22818 \u24187 \u22823 \u29518 \u65288 \u23478 \u38263 \u29305 \u21029 \u29518 \u21237 \u65289 ', cost: 1000 \}\
-    ];\
-\
-    let currentPoints = 0;\
-    let allTasks = [...defaultTasks];\
-    let allRewards = [...defaultRewards];\
-    let pendingRedeems = [];\
-\
-    const todayStr = getTodayString();\
-    let todayCompletedTasks = [];\
-    let todayPhotos = \{\};\
-\
-    let activePoints = 0;\
-    let activeTaskId = null;\
-    let pendingImageData = null;\
-\
-    function initFirebaseListener() \{\
-      stateDoc.onSnapshot((doc) => \{\
-        if (doc.exists) \{\
-          const data = doc.data();\
-          currentPoints = data.points !== undefined ? data.points : 0;\
-          allTasks = data.tasks || defaultTasks;\
-          allRewards = data.rewards || defaultRewards;\
-          pendingRedeems = data.pendingRedeems || [];\
-          if (data.themeId) applyTheme(data.themeId);\
-        \} else \{\
-          saveStateToFirebase();\
-        \}\
-        document.getElementById('total-points').innerText = currentPoints;\
-        renderTaskList();\
-        renderRewardList();\
-        if (document.getElementById('parent-controls').style.display === 'block') \{\
-          renderManageLists();\
-        \}\
-      \});\
-\
-      todayDoc.onSnapshot((doc) => \{\
-        if (doc.exists) \{\
-          const data = doc.data();\
-          if (data.date === todayStr) \{\
-            todayCompletedTasks = data.completedTasks || [];\
-            todayPhotos = data.photos || \{\};\
-          \} else \{\
-            todayCompletedTasks = [];\
-            todayPhotos = \{\};\
-            todayDoc.set(\{ date: todayStr, completedTasks: [], photos: \{\} \});\
-          \}\
-        \} else \{\
-          todayDoc.set(\{ date: todayStr, completedTasks: [], photos: \{\} \});\
-        \}\
-        renderTaskList();\
-        if (document.getElementById('parent-controls').style.display === 'block') \{\
-          renderManageLists();\
-        \}\
-      \});\
-    \}\
-\
-    function saveStateToFirebase() \{\
-      stateDoc.set(\{\
-        points: currentPoints,\
-        tasks: allTasks,\
-        rewards: allRewards,\
-        pendingRedeems: pendingRedeems,\
-        themeId: currentThemeId\
-      \}, \{ merge: true \});\
-    \}\
-\
-    function init() \{\
-      renderThemeGrid();\
-      showRandomQuote();\
-      initFirebaseListener();\
-    \}\
-\
-    function interactOtter() \{\
-      const text = otterDialogues[Math.floor(Math.random() * otterDialogues.length)];\
-      document.getElementById('otter-text').innerText = text;\
-      const svg = document.getElementById('otter-svg');\
-      svg.classList.add('active');\
-      setTimeout(() => svg.classList.remove('active'), 1200);\
-    \}\
-\
-    function switchTab(tab) \{\
-      if (tab === 'tasks') \{\
-        document.getElementById('view-tasks').style.display = 'block';\
-        document.getElementById('view-shop').style.display = 'none';\
-        document.getElementById('tab-tasks-btn').classList.add('active');\
-        document.getElementById('tab-shop-btn').classList.remove('active');\
-      \} else \{\
-        document.getElementById('view-tasks').style.display = 'none';\
-        document.getElementById('view-shop').style.display = 'block';\
-        document.getElementById('tab-tasks-btn').classList.remove('active');\
-        document.getElementById('tab-shop-btn').classList.add('active');\
-      \}\
-    \}\
-\
-    function renderTaskList() \{\
-      const listContainer = document.getElementById('task-list');\
-      listContainer.innerHTML = '';\
-\
-      allTasks.forEach(task => \{\
-        const isDone = todayCompletedTasks.includes(task.id);\
-        const card = document.createElement('div');\
-        card.className = `card-item $\{isDone ? 'completed' : ''\}`;\
-        \
-        card.innerHTML = `\
-          <div class="card-info">\
-            <h3>$\{task.title\}</h3>\
-            <span class="task-badge">+$\{task.points\} \uc0\u40670 </span>\
-          </div>\
-          $\{isDone \
-            ? `<button class="upload-btn done" disabled>\uc0\u9989  \u20170 \u26085 \u24050 \u25171 \u21345 </button>`\
-            : `<button class="upload-btn" onclick="triggerUpload('$\{task.id\}', $\{task.points\})">\uc0\u55357 \u56567  \u25293 \u29031 \u25171 \u21345 </button>`\
-          \}\
-        `;\
-        listContainer.appendChild(card);\
-      \});\
-    \}\
-\
-    function renderRewardList() \{\
-      const shopContainer = document.getElementById('reward-list');\
-      shopContainer.innerHTML = '';\
-\
-      allRewards.forEach(reward => \{\
-        const canAfford = currentPoints >= reward.cost;\
-        const diff = reward.cost - currentPoints;\
-        const isPending = pendingRedeems.some(item => item.rewardId === reward.id);\
-        \
-        const card = document.createElement('div');\
-        card.className = 'card-item';\
-        \
-        let buttonHtml = '';\
-        if (isPending) \{\
-          buttonHtml = `<button class="redeem-btn pending" disabled>\uc0\u9203  \u29238 \u27597 \u26680 \u20934 \u20013 </button>`;\
-        \} else if (canAfford) \{\
-          buttonHtml = `<button class="redeem-btn" onclick="requestRedeem('$\{reward.id\}', '$\{reward.title\}', $\{reward.cost\})">\uc0\u55356 \u57217  \u30003 \u35531 \u20812 \u25563 </button>`;\
-        \} else \{\
-          buttonHtml = `<button class="redeem-btn disabled" disabled>\uc0\u36996 \u24046  $\{diff\} \u40670 </button>`;\
-        \}\
-\
-        card.innerHTML = `\
-          <div class="card-info">\
-            <h3>$\{reward.title\}</h3>\
-            <span class="task-badge" style="background:var(--badge-bg); color:var(--badge-text);">\uc0\u38656 \u35201  $\{reward.cost\} \u40670 </span>\
-          </div>\
-          $\{buttonHtml\}\
-        `;\
-        shopContainer.appendChild(card);\
-      \});\
-    \}\
-\
-    function requestRedeem(id, title, cost) \{\
-      if (confirm(`\uc0\u30906 \u23450 \u35201 \u21521 \u29240 \u29240 \u23229 \u23229 \u30003 \u35531 \u20812 \u25563 \u12300 $\{title\}\u12301 \u21966 \u65311 `)) \{\
-        const requestItem = \{\
-          requestId: 'req_' + Date.now(),\
-          rewardId: id,\
-          title: title,\
-          cost: cost,\
-          time: new Date().toLocaleTimeString()\
-        \};\
-        pendingRedeems.push(requestItem);\
-        saveStateToFirebase();\
-        alert(`\uc0\u55357 \u56596  \u30003 \u35531 \u24050 \u36865 \u20986 \u65281 \u24555 \u35531 \u29240 \u29240 \u23229 \u23229 \u25171 \u38283 \u12300 \u23478 \u38263 \u31649 \u29702 \u12301 \u26680 \u20934 \u31150 \u29289 \u21543 \u65281 `);\
-      \}\
-    \}\
-\
-    function openParentModal() \{\
-      document.getElementById('parent-auth').style.display = 'block';\
-      document.getElementById('parent-controls').style.display = 'none';\
-      document.getElementById('parent-pin').value = '';\
-      document.getElementById('parent-modal').classList.add('active');\
-    \}\
-\
-    function closeParentModal() \{ document.getElementById('parent-modal').classList.remove('active'); \}\
-\
-    function checkParentPin() \{\
-      const pin = document.getElementById('parent-pin').value;\
-      if (pin === '1234') \{\
-        document.getElementById('parent-auth').style.display = 'none';\
-        document.getElementById('parent-controls').style.display = 'block';\
-        renderManageLists();\
-      \} else \{\
-        alert("\uc0\u23494 \u30908 \u19981 \u27491 \u30906 \u21908 \u65281 ");\
-      \}\
-    \}\
-\
-    function renderManageLists() \{\
-      const requestsBox = document.getElementById('manage-requests-list');\
-      requestsBox.innerHTML = '';\
-\
-      if (pendingRedeems.length === 0) \{\
-        requestsBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">\uc0\u30446 \u21069 \u27794 \u26377 \u24453 \u26680 \u20934 \u30340 \u31150 \u29289 \u30003 \u35531 \u12290 </p>';\
-      \} else \{\
-        pendingRedeems.forEach(req => \{\
-          const div = document.createElement('div');\
-          div.className = 'manage-item';\
-          div.style.border = '2px solid #FFCDD2';\
-          div.innerHTML = `\
-            <span><b>$\{req.title\}</b> (\uc0\u25187  $\{req.cost\} \u40670 )</span>\
-            <div>\
-              <button class="approve-btn" onclick="parentApproveRedeem('$\{req.requestId\}', $\{req.cost\}, '$\{req.title\}')">\uc0\u9989  \u21516 \u24847 </button>\
-              <button class="delete-btn" onclick="parentRejectRedeem('$\{req.requestId\}')">\uc0\u10060  \u25298 \u32085 </button>\
-            </div>\
-          `;\
-          requestsBox.appendChild(div);\
-        \});\
-      \}\
-\
-      const historyBox = document.getElementById('manage-history-list');\
-      historyBox.innerHTML = '';\
-\
-      if (todayCompletedTasks.length === 0) \{\
-        historyBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">\uc0\u20170 \u26085 \u23578 \u28961 \u25171 \u21345 \u32000 \u37636 \u12290 </p>';\
-      \} else \{\
-        todayCompletedTasks.forEach(taskId => \{\
-          const task = allTasks.find(t => t.id === taskId);\
-          const taskTitle = task ? task.title : '\uc0\u26410 \u30693 \u20219 \u21209 ';\
-          const points = task ? task.points : 0;\
-          const photoData = todayPhotos[taskId] || null;\
-\
-          const div = document.createElement('div');\
-          div.className = 'manage-item';\
-          div.innerHTML = `\
-            <span>$\{taskTitle\} (+$\{points\}\uc0\u40670 )</span>\
-            <div>\
-              $\{photoData \
-                ? `<button class="view-photo-btn" onclick="viewPhoto('$\{taskTitle\}', '$\{taskId\}')">\uc0\u55357 \u56384  \u29031 \u29255 </button>\
-                   <button class="approve-btn" onclick="approveAndClearPhoto('$\{taskId\}')">\uc0\u9989  OK \u23529 \u26680 \u36890 \u36942 </button>` \
-                : `<span style="font-size:0.75rem; color:#4CAF50; font-weight:bold; margin-right:6px;">\uc0\u24050 \u23529 \u26680 \u36890 \u36942 </span>`\
-              \}\
-              <button class="delete-btn" onclick="revokeCheckin('$\{taskId\}', $\{points\})">\uc0\u25764 \u37559 </button>\
-            </div>\
-          `;\
-          historyBox.appendChild(div);\
-        \});\
-      \}\
-\
-      const taskManageBox = document.getElementById('manage-tasks-list');\
-      taskManageBox.innerHTML = '';\
-      allTasks.forEach(task => \{\
-        const div = document.createElement('div');\
-        div.className = 'manage-item';\
-        div.innerHTML = `\
-          <span>$\{task.title\} (+$\{task.points\}\uc0\u40670 )</span>\
-          <div>\
-            <button class="edit-btn" onclick="editTask('$\{task.id\}')">\uc0\u9999 \u65039  \u32232 \u36655 </button>\
-            <button class="delete-btn" onclick="deleteTask('$\{task.id\}')">\uc0\u21034 \u38500 </button>\
-          </div>\
-        `;\
-        taskManageBox.appendChild(div);\
-      \});\
-\
-      const rewardManageBox = document.getElementById('manage-rewards-list');\
-      rewardManageBox.innerHTML = '';\
-      allRewards.forEach(reward => \{\
-        const div = document.createElement('div');\
-        div.className = 'manage-item';\
-        div.innerHTML = `\
-          <span>$\{reward.title\} ($\{reward.cost\}\uc0\u40670 )</span>\
-          <div>\
-            <button class="edit-btn" onclick="editReward('$\{reward.id\}')">\uc0\u9999 \u65039  \u32232 \u36655 </button>\
-            <button class="delete-btn" onclick="deleteReward('$\{reward.id\}')">\uc0\u21034 \u38500 </button>\
-          </div>\
-        `;\
-        rewardManageBox.appendChild(div);\
-      \});\
-    \}\
-\
-    function parentApproveRedeem(requestId, cost, title) \{\
-      if (confirm(`\uc0\u30906 \u35469 \u35201 \u21516 \u24847 \u33418 \u33418 \u20812 \u25563 \u12300 $\{title\}\u12301 \u21966 \u65311 \u36889 \u23559 \u26371 \u27491 \u24335 \u25187 \u38500 \u40670 \u25976  $\{cost\} \u40670 \u65281 `)) \{\
-        if (currentPoints < cost) \{\
-          alert("\uc0\u33418 \u33418 \u27492 \u26178 \u30340 \u40670 \u25976 \u19981 \u36275 \u65292 \u28961 \u27861 \u26680 \u20934 \u20812 \u25563 \u21908 \u65281 ");\
-          return;\
-        \}\
-        currentPoints -= cost;\
-        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);\
-        saveStateToFirebase();\
-\
-        setTimeout(() => \{\
-          interactOtter();\
-          fireFancyConfetti();\
-          alert(`\uc0\u55356 \u57225  \u24050 \u26680 \u20934 \u65281 \u25104 \u21151 \u25187 \u38500  $\{cost\} \u40670 \u65292 \u24555 \u25226 \u31150 \u29289 \u25343 \u32102 \u33418 \u33418 \u21543 \u65281 `);\
-        \}, 100);\
-      \}\
-    \}\
-\
-    function parentRejectRedeem(requestId) \{\
-      if (confirm("\uc0\u30906 \u23450 \u35201 \u25298 \u32085 \u25110 \u21462 \u28040 \u36889 \u31558 \u31150 \u29289 \u30003 \u35531 \u21966 \u65311 \u65288 \u40670 \u25976 \u19981 \u26371 \u34987 \u25187 \u38500 \u65289 ")) \{\
-        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function approveAndClearPhoto(taskId) \{\
-      if (confirm("\uc0\u30906 \u35469 \u29031 \u29255  OK \u23529 \u26680 \u36890 \u36942 \u65311 \u36889 \u23559 \u26371 \u21034 \u38500 \u29031 \u29255 \u20197 \u31680 \u30465 \u38642 \u31471 \u31354 \u38291 \u65292 \u20294 \u20445 \u30041 \u33418 \u33418 \u30340 \u40670 \u25976 \u33287 \u23436 \u25104 \u32000 \u37636 \u65281 ")) \{\
-        delete todayPhotos[taskId];\
-        todayDoc.set(\{ photos: todayPhotos \}, \{ merge: true \}).then(() => \{\
-          alert("\uc0\u23529 \u26680 \u36890 \u36942 \u65281 \u29031 \u29255 \u24050 \u38918 \u21033 \u31227 \u38500 \u65292 \u31354 \u38291 \u24050 \u37323 \u25918 \u65281 ");\
-          renderManageLists();\
-        \}).catch((err) => \{\
-          alert("\uc0\u25805 \u20316 \u22833 \u25943 \u65292 \u35531 \u20877 \u35430 \u19968 \u27425 \u12290 ");\
-        \});\
-      \}\
-    \}\
-\
-    function viewPhoto(title, taskId) \{\
-      const photoData = todayPhotos[taskId];\
-      document.getElementById('photo-view-title').innerText = `\uc0\u55357 \u56567  $\{title\} - \u25171 \u21345 \u20304 \u35657 `;\
-      document.getElementById('photo-view-img').src = photoData;\
-      document.getElementById('parent-modal').classList.remove('active');\
-      document.getElementById('photo-view-modal').classList.add('active');\
-    \}\
-\
-    function closePhotoViewModal() \{\
-      document.getElementById('photo-view-modal').classList.remove('active');\
-      document.getElementById('parent-modal').classList.add('active');\
-    \}\
-\
-    function editTask(id) \{\
-      const task = allTasks.find(t => t.id === id);\
-      if (!task) return;\
-      const newTitle = prompt("\uc0\u35531 \u20462 \u25913 \u20219 \u21209 \u21517 \u31281 \u65306 ", task.title);\
-      if (newTitle !== null && newTitle.trim() !== "") \{\
-        const newPtsStr = prompt("\uc0\u35531 \u20462 \u25913 \u23436 \u25104 \u29554 \u24471 \u30340 \u40670 \u25976 \u65306 ", task.points);\
-        const newPts = parseInt(newPtsStr);\
-        task.title = newTitle.trim();\
-        if (!isNaN(newPts) && newPts > 0) task.points = newPts;\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function editReward(id) \{\
-      const reward = allRewards.find(r => r.id === id);\
-      if (!reward) return;\
-      const newTitle = prompt("\uc0\u35531 \u20462 \u25913 \u31150 \u29289 \u21517 \u31281 \u65306 ", reward.title);\
-      if (newTitle !== null && newTitle.trim() !== "") \{\
-        const newCostStr = prompt("\uc0\u35531 \u20462 \u25913 \u25152 \u38656 \u40670 \u25976 \u65306 ", reward.cost);\
-        const newCost = parseInt(newCostStr);\
-        reward.title = newTitle.trim();\
-        if (!isNaN(newCost) && newCost > 0) reward.cost = newCost;\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function revokeCheckin(taskId, points) \{\
-      if (confirm("\uc0\u30906 \u23450 \u35201 \u25764 \u37559 \u36889 \u31558 \u25171 \u21345 \u21966 \u65311 (\u40670 \u25976 \u26371 \u21516 \u27493 \u25187 \u38500 )")) \{\
-        todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);\
-        delete todayPhotos[taskId];\
-        currentPoints = Math.max(0, currentPoints - points);\
-        saveStateToFirebase();\
-        todayDoc.set(\{ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos \});\
-      \}\
-    \}\
-\
-    function deleteTask(id) \{\
-      if (confirm("\uc0\u30906 \u23450 \u35201 \u21034 \u38500 \u36889 \u20491 \u20219 \u21209 \u21966 \u65311 ")) \{\
-        allTasks = allTasks.filter(t => t.id !== id);\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function deleteReward(id) \{\
-      if (confirm("\uc0\u30906 \u23450 \u35201 \u21034 \u38500 \u36889 \u20491 \u31150 \u29289 \u21966 \u65311 ")) \{\
-        allRewards = allRewards.filter(r => r.id !== id);\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function addNewTask() \{\
-      const taskName = prompt("\uc0\u35531 \u36664 \u20837 \u26032 \u22686 \u30340 \u25171 \u21345 \u20219 \u21209 \u21517 \u31281 \u65306 ", "\u55356 \u57273  \u32244 \u32722 \u24392 \u37628 \u29748 ");\
-      if (taskName && taskName.trim() !== "") \{\
-        const pointsStr = prompt("\uc0\u35531 \u36664 \u20837 \u23436 \u25104 \u27492 \u20219 \u21209 \u29554 \u24471 \u30340 \u40670 \u25976 \u65306 ", "10");\
-        const pts = parseInt(pointsStr) || 10;\
-        const newTask = \{ id: 'task_' + Date.now(), title: taskName.trim(), points: pts \};\
-        allTasks.push(newTask);\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function addNewReward() \{\
-      const rewardName = prompt("\uc0\u35531 \u36664 \u20837 \u26032 \u22686 \u30340 \u31150 \u29289 \u21517 \u31281 \u65306 ", "\u55358 \u56824  \u36023 \u26032 \u23043 \u23043 ");\
-      if (!rewardName || !rewardName.trim()) return;\
-      const costStr = prompt("\uc0\u35531 \u36664 \u20837 \u20812 \u25563 \u25152 \u38656 \u40670 \u25976 \u65306 ", "150");\
-      const cost = parseInt(costStr);\
-      if (rewardName && !isNaN(cost) && cost > 0) \{\
-        const newReward = \{ id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost \};\
-        allRewards.push(newReward);\
-        saveStateToFirebase();\
-      \}\
-    \}\
-\
-    function adjustPointsDirectly() \{\
-      const input = prompt("\uc0\u35531 \u36664 \u20837 \u35201 \u35519 \u25972 \u30340 \u40670 \u25976 \u32317 \u38989 \u65306 ", currentPoints);\
-      const newPts = parseInt(input);\
-      if (!isNaN(newPts) && newPts >= 0) \{\
-        currentPoints = newPts;\
-        saveStateToFirebase();\
-        alert(`\uc0\u40670 \u25976 \u24050 \u26356 \u26032 \u28858  $\{currentPoints\} \u40670 \u65281 `);\
-      \}\
-    \}\
-\
-    function showRandomQuote() \{\
-      const item = multiQuotes[Math.floor(Math.random() * multiQuotes.length)];\
-      document.getElementById('q-zh').innerText = item.zh;\
-      document.getElementById('q-en').innerText = item.en;\
-      document.getElementById('q-jp').innerText = item.jp;\
-      document.getElementById('quote-modal').classList.add('active');\
-    \}\
-\
-    function closeQuoteModal() \{ document.getElementById('quote-modal').classList.remove('active'); \}\
-\
-    const fileInput = document.createElement('input');\
-    fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.capture = 'environment';\
-    document.body.appendChild(fileInput);\
-\
-    function triggerUpload(taskId, points) \{ activeTaskId = taskId; activePoints = points; fileInput.click(); \}\
-\
-    fileInput.addEventListener('change', function(e) \{\
-      if (e.target.files && e.target.files[0]) \{\
-        const file = e.target.files[0];\
-        const reader = new FileReader();\
-        reader.onload = function(evt) \{\
-          const img = new Image();\
-          img.onload = function() \{\
-            const canvas = document.createElement('canvas');\
-            const maxDimension = 500;\
-            let width = img.width; let height = img.height;\
-            if (width > height) \{\
-              if (width > maxDimension) \{ height = Math.round((height * maxDimension) / width); width = maxDimension; \}\
-            \} else \{\
-              if (height > maxDimension) \{ width = Math.round((width * maxDimension) / height); height = maxDimension; \}\
-            \}\
-            canvas.width = width; canvas.height = height;\
-            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);\
-            pendingImageData = canvas.toDataURL('image/jpeg', 0.5);\
-            document.getElementById('preview-image').src = pendingImageData;\
-            document.getElementById('preview-modal').classList.add('active');\
-          \};\
-          img.src = evt.target.result;\
-        \};\
-        reader.readAsDataURL(file);\
-      \}\
-    \});\
-\
-    function closePreviewModal() \{ document.getElementById('preview-modal').classList.remove('active'); fileInput.value = ''; \}\
-\
-    function confirmUpload() \{\
-      const confirmBtn = document.getElementById('confirm-btn');\
-      confirmBtn.innerText = "\uc0\u25171 \u21345 \u20786 \u23384 \u20013 ..."; confirmBtn.disabled = true;\
-      currentPoints += activePoints; saveStateToFirebase();\
-\
-      if (!todayCompletedTasks.includes(activeTaskId)) \{\
-        todayCompletedTasks.push(activeTaskId); todayPhotos[activeTaskId] = pendingImageData;\
-        todayDoc.set(\{ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos \}, \{ merge: true \}).then(() => \{\
-          closePreviewModal(); confirmBtn.innerText = "\uc0\u30906 \u23450 \u25171 \u21345 \u65281 "; confirmBtn.disabled = false;\
-          interactOtter(); fireFancyConfetti(); fileInput.value = '';\
-        \}).catch((err) => \{\
-          alert("\uc0\u20786 \u23384 \u22833 \u25943 \u65292 \u35531 \u20877 \u35430 \u19968 \u27425 \u65281 "); confirmBtn.innerText = "\u30906 \u23450 \u25171 \u21345 \u65281 "; confirmBtn.disabled = false;\
-        \});\
-      \}\
-    \}\
-\
-    function fireFancyConfetti() \{\
-      var count = 200; var defaults = \{ origin: \{ y: 0.7 \} \};\
-      function fire(particleRatio, opts) \{ confetti(Object.assign(\{\}, defaults, opts, \{ particleCount: Math.floor(count * particleRatio) \})); \}\
-      fire(0.25, \{ spread: 26, startVelocity: 55 \}); fire(0.2, \{ spread: 60 \});\
-      fire(0.35, \{ spread: 100, decay: 0.91, scalar: 0.8 \});\
-      fire(0.1, \{ spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 \});\
-      fire(0.1, \{ spread: 120, startVelocity: 45 \});\
-      setTimeout(() => \{ confetti(\{ shapes: ['star'], colors: ['#FFE082', '#FFB300', '#FF8F00'], particleCount: 50, spread: 100, origin: \{ y: 0.5 \} \}); \}, 300);\
-    \}\
-\
-    init();\
-  </script>\
-</body>\
-</html>}
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* CSS 變數定義預設色調 (檸檬黃) */
+    :root {
+      --bg-color: #FFFDE7;
+      --bg-pattern: #FBC02D;
+      --main-title: #F57F17;
+      --card-border: #FFF59D;
+      --points-color: #F57F17;
+      --tab-active: #FBC02D;
+      --tab-active-text: #3E2723;
+      --btn-bg: #FBC02D;
+      --btn-text: #3E2723;
+      --badge-bg: #FFF59D;
+      --badge-text: #F57F17;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px 15px 160px 15px;
+      background-color: var(--bg-color);
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="%23FBC02D" stroke-width="3" opacity="0.15"/><path d="M50 50 L50 10 M50 50 L85 67 M50 50 L15 67 M50 50 L50 90 M50 50 L15 33 M50 50 L85 33" stroke="%23FBC02D" stroke-width="2" opacity="0.15"/></svg>');
+      background-repeat: repeat;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #4E342E;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background-color 0.4s ease;
+    }
+
+    .container { width: 100%; max-width: 420px; }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .header-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--main-title);
+      text-shadow: 1px 1px 0px #FFF;
+      margin: 0;
+    }
+
+    .theme-picker-btn {
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid var(--tab-active);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--tab-active-text);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      backdrop-filter: blur(4px);
+    }
+
+    .dashboard {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+      border: 3px solid var(--card-border);
+      margin-bottom: 20px;
+      transition: border-color 0.4s ease;
+    }
+
+    .points-title { font-size: 1rem; color: #795548; font-weight: bold; }
+    .points-display { font-size: 3.2rem; font-weight: 900; color: var(--points-color); margin: 2px 0; }
+
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab-btn {
+      flex: 1; padding: 10px; border: none; border-radius: 16px;
+      font-size: 1rem; font-weight: bold; background: rgba(255, 255, 255, 0.65);
+      color: #795548; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+    .tab-btn.active {
+      background: var(--tab-active); color: var(--tab-active-text);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { color: #5D4037; font-size: 1.2rem; font-weight: bold; margin: 0; }
+
+    .action-btn {
+      background: #81C784; color: white; border: none; padding: 6px 12px;
+      border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .card-list { display: flex; flex-direction: column; gap: 12px; }
+    .card-item {
+      background: rgba(255, 255, 255, 0.92); border-radius: 18px; padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease;
+    }
+    .card-item.completed { background: rgba(240, 240, 240, 0.75); border: 1px solid #C8E6C9; }
+    .card-info h3 { margin: 0 0 4px 0; font-size: 1.05rem; color: #4E342E; }
+    .card-item.completed .card-info h3 { color: #A1887F; text-decoration: line-through; }
+
+    .task-badge {
+      display: inline-block; background: var(--badge-bg); color: var(--badge-text);
+      padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
+    }
+
+    .upload-btn {
+      background: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 14px;
+      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    }
+    .upload-btn.done { background: #A5D6A7; color: #1B5E20; cursor: default; box-shadow: none; }
+
+    .redeem-btn {
+      background: #FFB74D; color: white; border: none; padding: 10px 14px;
+      border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 3px 8px rgba(255, 183, 77, 0.3);
+    }
+    .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
+    .redeem-btn.pending { background: #B0BEC5; color: white; cursor: default; box-shadow: none; }
+
+    /* 🦦 方案 C 海獺角色 */
+    .otter-wrapper {
+      position: fixed; bottom: 12px; right: 15px; z-index: 99;
+      display: flex; flex-direction: column; align-items: center; cursor: pointer;
+    }
+
+    .otter-bubble {
+      background: #FFF; padding: 8px 14px; border-radius: 18px; font-size: 0.85rem;
+      font-weight: bold; color: #6D4C41; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 2px solid var(--tab-active); margin-bottom: 6px; white-space: nowrap;
+      animation: floatBubble 2.5s infinite ease-in-out;
+    }
+
+    .otter-svg-card {
+      width: 110px; height: 120px; animation: otterFloat 3s infinite ease-in-out;
+      filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.08));
+    }
+
+    .paw-left, .paw-right { transform-origin: center; transition: transform 0.15s; }
+    .otter-svg-card.active { animation: otterJump 0.4s infinite alternate ease-in-out !important; }
+    .otter-svg-card.active .paw-left { animation: clapLeft 0.18s infinite alternate ease-in-out; }
+    .otter-svg-card.active .paw-right { animation: clapRight 0.18s infinite alternate ease-in-out; }
+
+    @keyframes otterFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+    @keyframes floatBubble { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes otterJump { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-12px) scale(1.06); } }
+    @keyframes clapLeft { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(20deg) translate(8px, -4px); } }
+    @keyframes clapRight { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(-20deg) translate(-8px, -4px); } }
+
+    /* Modal 彈出視窗 */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: center; z-index: 1000;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: var(--bg-color); width: 85%; max-width: 360px; border-radius: 24px;
+      padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 4px solid var(--card-border);
+      text-align: center; transform: scale(0.8); transition: transform 0.3s ease;
+      max-height: 85vh; overflow-y: auto;
+    }
+    .modal-overlay.active .modal-card { transform: scale(1); }
+    .modal-title { font-size: 1.2rem; color: #5D4037; font-weight: bold; margin-bottom: 12px; }
+
+    .quote-box {
+      background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 20px;
+      text-align: left; border: 1px solid var(--card-border);
+    }
+    .quote-zh { font-size: 1.1rem; font-weight: bold; color: var(--main-title); margin-bottom: 6px; }
+    .quote-en { font-size: 0.9rem; color: #5D4037; margin-bottom: 4px; }
+    .quote-jp { font-size: 0.9rem; color: #1B5E20; }
+
+    .modal-btn {
+      background: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 24px;
+      border-radius: 20px; font-size: 1rem; font-weight: bold; cursor: pointer;
+    }
+
+    .preview-img { width: 100%; max-height: 280px; object-fit: contain; border-radius: 16px; margin-bottom: 15px; border: 2px solid #DDD; background: #000; }
+    .btn-group { display: flex; gap: 10px; justify-content: center; }
+    .cancel-btn { background: #E0E0E0; color: #616161; }
+
+    /* 配色選擇器風格 */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .theme-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #FFF;
+      border-radius: 14px;
+      border: 2px solid #EEE;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #4E342E;
+      transition: all 0.2s ease;
+    }
+    .theme-item.active {
+      border-color: #4CAF50;
+      background: #E8F5E9;
+    }
+    .theme-color-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .manage-list { text-align: left; margin-bottom: 15px; }
+    .manage-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFF; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px;
+      border: 1px solid var(--card-border); font-size: 0.9rem;
+    }
+    .edit-btn { background: #FFB74D; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; }
+    .delete-btn { background: #FF5252; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+    .view-photo-btn { background: #2196F3; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; }
+    .approve-btn { background: #4CAF50; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <h2 class="header-title">🌸 芊芊打卡小程式</h2>
+      <button class="theme-picker-btn" onclick="openThemeModal()">🎨 主題配色</button>
+    </div>
+
+    <div class="dashboard">
+      <div class="points-title">⭐ 芊芊累積的榮譽點數 ⭐</div>
+      <div class="points-display" id="total-points">0</div>
+      <small style="color: #8D6E63;">持續努力，準備換大獎！</small>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tab-tasks-btn" onclick="switchTab('tasks')">📋 打卡任務</button>
+      <button class="tab-btn" id="tab-shop-btn" onclick="switchTab('shop')">🎁 禮物商店</button>
+    </div>
+
+    <div id="view-tasks">
+      <div class="section-header">
+        <h3 class="section-title">今日打卡任務</h3>
+      </div>
+      <div class="card-list" id="task-list"></div>
+    </div>
+
+    <div id="view-shop" style="display: none;">
+      <div class="section-header">
+        <h3 class="section-title">獎勵兌換中心</h3>
+        <button class="action-btn" style="background:#8D6E63" onclick="openParentModal()">⚙️ 家長管理</button>
+      </div>
+      <div class="card-list" id="reward-list"></div>
+    </div>
+  </div>
+
+  <div class="otter-wrapper" onclick="interactOtter()">
+    <div class="otter-bubble" id="otter-text">拍拍手！芊芊加油喔！👏</div>
+    <svg class="otter-svg-card" id="otter-svg" viewBox="0 0 120 130">
+      <defs>
+        <linearGradient id="otterFur" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E0D5C1" />
+          <stop offset="100%" stop-color="#CBBCA5" />
+        </linearGradient>
+      </defs>
+      <g stroke="#7A6858" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="42" cy="118" rx="10" ry="6" fill="#CBBCA5" />
+        <ellipse cx="78" cy="118" rx="10" ry="6" fill="#CBBCA5" />
+        <path d="M 32 65 C 22 80, 22 110, 38 118 C 48 122, 72 122, 82 118 C 98 110, 98 80, 88 65 Z" fill="url(#otterFur)" />
+        <path d="M 40 70 C 32 82, 32 106, 42 112 C 50 115, 70 115, 78 112 C 88 106, 88 82, 80 70 Z" fill="#FFFFFF" stroke="none" />
+        <circle cx="60" cy="45" r="32" fill="url(#otterFur)" />
+        <circle cx="31" cy="32" r="5" fill="#E0D5C1" />
+        <circle cx="89" cy="32" r="5" fill="#E0D5C1" />
+        <circle cx="31" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
+        <circle cx="89" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
+        <ellipse cx="42" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
+        <ellipse cx="78" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
+        <path d="M 45 42 Q 49 38, 53 42" fill="none" stroke="#524336" stroke-width="2.5" />
+        <path d="M 67 42 Q 71 38, 75 42" fill="none" stroke="#524336" stroke-width="2.5" />
+        <ellipse cx="60" cy="48" rx="3.5" ry="2.5" fill="#524336" stroke="none" />
+        <path d="M 54 52 Q 60 56, 60 52 Q 60 56, 66 52" fill="none" stroke="#524336" stroke-width="2.5" />
+        <g class="paw-left"><path d="M 30 75 C 38 82, 50 82, 52 72 C 46 68, 36 68, 30 75 Z" fill="#E0D5C1" /></g>
+        <g class="paw-right"><path d="M 90 75 C 82 82, 70 82, 68 72 C 74 68, 84 68, 90 75 Z" fill="#E0D5C1" /></g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="modal-overlay" id="theme-modal">
+    <div class="modal-card">
+      <div class="modal-title">🎨 挑選喜歡的馬卡龍配色</div>
+      <div class="theme-grid" id="theme-grid"></div>
+      <button class="modal-btn" onclick="closeThemeModal()">確定套用</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="quote-modal">
+    <div class="modal-card">
+      <div class="modal-title">✨ 芊芊的每日一句 ✨</div>
+      <div class="quote-box">
+        <div class="quote-zh" id="q-zh"></div>
+        <div class="quote-en" id="q-en"></div>
+        <div class="quote-jp" id="q-jp"></div>
+      </div>
+      <button class="modal-btn" onclick="closeQuoteModal()">收到！今天也要加油 ☀️</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="preview-modal">
+    <div class="modal-card">
+      <div class="modal-title">📷 確認上傳照片佐證</div>
+      <img id="preview-image" class="preview-img" src="" alt="預覽照片">
+      <div class="btn-group">
+        <button class="modal-btn cancel-btn" onclick="closePreviewModal()">重拍</button>
+        <button class="modal-btn" id="confirm-btn" onclick="confirmUpload()">確定打卡！</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="photo-view-modal" style="z-index: 1001;">
+    <div class="modal-card">
+      <div class="modal-title" id="photo-view-title">📷 打卡照片佐證</div>
+      <img id="photo-view-img" class="preview-img" src="" alt="打卡紀錄照片">
+      <button class="modal-btn" style="background:#2196F3; color:white;" onclick="closePhotoViewModal()">返回家長後台 ↩️</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="parent-modal">
+    <div class="modal-card">
+      <div class="modal-title">⚙️ 家長管理後台</div>
+      
+      <div id="parent-auth">
+        <input type="password" id="parent-pin" placeholder="請輸入家長密碼" style="padding: 10px; font-size: 1rem; width: 70%; border-radius: 12px; border: 1px solid #CCC; text-align: center; margin: 15px 0;">
+        <br>
+        <div class="btn-group">
+          <button class="modal-btn cancel-btn" onclick="closeParentModal()">取消</button>
+          <button class="modal-btn" onclick="checkParentPin()">登入</button>
+        </div>
+      </div>
+
+      <div id="parent-controls" style="display: none; text-align: left;">
+        <hr style="border: 0.5px solid #FFE082; margin: 10px 0 15px 0;">
+
+        <h4 style="margin: 5px 0; color: #D32F2F;">🎁 芊芊的禮物兌換申請：</h4>
+        <div class="manage-list" id="manage-requests-list" style="margin-bottom:15px;"></div>
+
+        <h4 style="margin: 5px 0; color: #E65100;">📷 今日打卡相片審核：</h4>
+        <div class="manage-list" id="manage-history-list"></div>
+
+        <hr style="border: 0.5px solid #FFE082; margin: 15px 0;">
+        
+        <button class="action-btn" style="background:#FF9800; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewReward()">➕ 新增禮物項目</button>
+        <button class="action-btn" style="background:#81C784; width:100%; padding: 10px; margin-bottom: 8px;" onclick="addNewTask()">➕ 新增打卡任務</button>
+        <button class="action-btn" style="background:#64B5F6; width:100%; padding: 10px; margin-bottom: 15px;" onclick="adjustPointsDirectly()">🪙 手動調整芊芊的點數</button>
+
+        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">📋 現有打卡任務（可編輯/刪除）：</h4>
+        <div class="manage-list" id="manage-tasks-list"></div>
+
+        <h4 style="margin: 10px 0 5px 0; color: #5D4037;">🎁 現有禮物項目（可編輯/刪除）：</h4>
+        <div class="manage-list" id="manage-rewards-list"></div>
+
+        <div style="margin-top: 15px; text-align: center;">
+          <button class="modal-btn cancel-btn" onclick="closeParentModal()">完成並離開</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4Ei7xW4lUdEJQiszWsyi7DHNzFjHg44s",
+      authDomain: "appforollie.firebaseapp.com",
+      projectId: "appforollie",
+      storageBucket: "appforollie.firebasestorage.app",
+      messagingSenderId: "164559884250",
+      appId: "1:164559884250:web:1cf1ff4bdc9c209cb9bae3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const stateDoc = db.collection("qian_data").doc("state");
+    const todayDoc = db.collection("qian_data").doc("today_records");
+
+    // 🎨 10 種精選馬卡龍主題色調設定
+    const macaronThemes = [
+      { id: 'yellow', name: '檸檬黃', bg: '#FFFDE7', border: '#FFF59D', title: '#F57F17', btn: '#FBC02D', text: '#3E2723', badgeBg: '#FFF59D', badgeText: '#F57F17' },
+      { id: 'pink', name: '櫻花粉', bg: '#FCE4EC', border: '#F8BBD0', title: '#C2185B', btn: '#F48FB1', text: '#880E4F', badgeBg: '#F8BBD0', badgeText: '#C2185B' },
+      { id: 'mint', name: '薄荷綠', bg: '#E8F5E9', border: '#C8E6C9', title: '#2E7D32', btn: '#81C784', text: '#1B5E20', badgeBg: '#C8E6C9', badgeText: '#2E7D32' },
+      { id: 'sky', name: '天空藍', bg: '#E1F5FE', border: '#B3E5FC', title: '#0288D1', btn: '#4FC3F7', text: '#01579B', badgeBg: '#B3E5FC', badgeText: '#0288D1' },
+      { id: 'purple', name: '薰衣草紫', bg: '#F3E5F5', border: '#E1BEE7', title: '#7B1FA2', btn: '#CE93D8', text: '#4A148C', badgeBg: '#E1BEE7', badgeText: '#7B1FA2' },
+      { id: 'peach', name: '蜜桃橘', bg: '#FBE9E7', border: '#FFCCBC', title: '#D84315', btn: '#FF8A65', text: '#BF360C', badgeBg: '#FFCCBC', badgeText: '#D84315' },
+      { id: 'cream', name: '奶油白', bg: '#FAF8F5', border: '#EFEBE9', title: '#5D4037', btn: '#D7CCC8', text: '#3E2723', badgeBg: '#EFEBE9', badgeText: '#5D4037' },
+      { id: 'matcha', name: '抹茶綠', bg: '#F1F8E9', border: '#DCEDC8', title: '#558B2F', btn: '#AED581', text: '#33691E', badgeBg: '#DCEDC8', badgeText: '#558B2F' },
+      { id: 'ocean', name: '海鹽藍', bg: '#E0F2F1', border: '#B2DFDB', title: '#00695C', btn: '#4DB6AC', text: '#004D40', badgeBg: '#B2DFDB', badgeText: '#00695C' },
+      { id: 'grape', name: '葡萄紫', bg: '#EDE7F6', border: '#D1C4E9', title: '#512DA8', btn: '#9FA8DA', text: '#311B92', badgeBg: '#D1C4E9', badgeText: '#512DA8' }
+    ];
+
+    let currentThemeId = 'yellow';
+
+    function applyTheme(themeId) {
+      const theme = macaronThemes.find(t => t.id === themeId) || macaronThemes[0];
+      currentThemeId = theme.id;
+
+      const root = document.documentElement;
+      root.style.setProperty('--bg-color', theme.bg);
+      root.style.setProperty('--card-border', theme.border);
+      root.style.setProperty('--main-title', theme.title);
+      root.style.setProperty('--points-color', theme.title);
+      root.style.setProperty('--tab-active', theme.btn);
+      root.style.setProperty('--tab-active-text', theme.text);
+      root.style.setProperty('--btn-bg', theme.btn);
+      root.style.setProperty('--btn-text', theme.text);
+      root.style.setProperty('--badge-bg', theme.badgeBg);
+      root.style.setProperty('--badge-text', theme.badgeText);
+
+      renderThemeGrid();
+    }
+
+    function openThemeModal() { document.getElementById('theme-modal').classList.add('active'); }
+    function closeThemeModal() { document.getElementById('theme-modal').classList.remove('active'); saveStateToFirebase(); }
+
+    function renderThemeGrid() {
+      const grid = document.getElementById('theme-grid');
+      grid.innerHTML = '';
+      macaronThemes.forEach(t => {
+        const item = document.createElement('div');
+        item.className = `theme-item ${t.id === currentThemeId ? 'active' : ''}`;
+        item.onclick = () => applyTheme(t.id);
+        item.innerHTML = `
+          <div class="theme-color-dot" style="background: ${t.btn}"></div>
+          <span>${t.name}</span>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    function getTodayString() {
+      const today = new Date();
+      return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    }
+
+    const multiQuotes = [
+      { zh: "今天的芊芊又比昨天更棒了！", en: "You are getting better every single day!", jp: "今日のチェンチェンは昨日より素晴らしい！" },
+      { zh: "堅持到底的小英雄最厲害！", en: "Superstar who keeps going to the end!", jp: "最後まで頑張る小さなヒーローが一番すごい！" },
+      { zh: "每一個小努力，都會變成大夢想！", en: "Small efforts turn into big dreams!", jp: "小さな努力が大きな夢に変わるよ！" },
+      { zh: "今天也要帶著燦爛的微笑完成任務喔！", en: "Complete your tasks with a big smile today!", jp: "今日も素敵な笑顔で任務を完了しよう！" }
+    ];
+
+    const otterDialogues = [
+      "拍拍手！芊芊最棒了！👏",
+      "今天又累積了好多點數呢！✨",
+      "記得天天打卡，換大禮物喔！🎁",
+      "為你加油！芊芊衝呀！🦦",
+      "搓搓手！芊芊今天超級棒！👏"
+    ];
+
+    let defaultTasks = [
+      { id: 'homework', title: '📝 完成學校作業', points: 10 },
+      { id: 'housework', title: '🧹 主動幫忙家事', points: 5 },
+      { id: 'reading', title: '📖 專心閱讀 20 分鐘', points: 10 },
+      { id: 'drawing', title: '🎨 完成繪畫創作', points: 10 },
+      { id: 'sport', title: '🏃 運動 30 分鐘', points: 10 }
+    ];
+
+    let defaultRewards = [
+      { id: 'r100', title: '🍦 美味小冰淇淋 / 點心', cost: 100 },
+      { id: 'r200', title: '✏️ 挑選喜歡的文具 / 玩遊戲 30 分鐘', cost: 200 },
+      { id: 'r300', title: '🎬 觀看一部精采電影 / 買故事繪本', cost: 300 },
+      { id: 'r500', title: '🎡 去公園野餐 / 樂園半日遊', cost: 500 },
+      { id: 'r1000', title: '👑 終極夢幻大獎（家長特別獎勵）', cost: 1000 }
+    ];
+
+    let currentPoints = 0;
+    let allTasks = [...defaultTasks];
+    let allRewards = [...defaultRewards];
+    let pendingRedeems = [];
+
+    const todayStr = getTodayString();
+    let todayCompletedTasks = [];
+    let todayPhotos = {};
+
+    let activePoints = 0;
+    let activeTaskId = null;
+    let pendingImageData = null;
+
+    function initFirebaseListener() {
+      stateDoc.onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          currentPoints = data.points !== undefined ? data.points : 0;
+          allTasks = data.tasks || defaultTasks;
+          allRewards = data.rewards || defaultRewards;
+          pendingRedeems = data.pendingRedeems || [];
+          if (data.themeId) applyTheme(data.themeId);
+        } else {
+          saveStateToFirebase();
+        }
+        document.getElementById('total-points').innerText = currentPoints;
+        renderTaskList();
+        renderRewardList();
+        if (document.getElementById('parent-controls').style.display === 'block') {
+          renderManageLists();
+        }
+      });
+
+      todayDoc.onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.date === todayStr) {
+            todayCompletedTasks = data.completedTasks || [];
+            todayPhotos = data.photos || {};
+          } else {
+            todayCompletedTasks = [];
+            todayPhotos = {};
+            todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
+          }
+        } else {
+          todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
+        }
+        renderTaskList();
+        if (document.getElementById('parent-controls').style.display === 'block') {
+          renderManageLists();
+        }
+      });
+    }
+
+    function saveStateToFirebase() {
+      stateDoc.set({
+        points: currentPoints,
+        tasks: allTasks,
+        rewards: allRewards,
+        pendingRedeems: pendingRedeems,
+        themeId: currentThemeId
+      }, { merge: true });
+    }
+
+    function init() {
+      renderThemeGrid();
+      showRandomQuote();
+      initFirebaseListener();
+    }
+
+    function interactOtter() {
+      const text = otterDialogues[Math.floor(Math.random() * otterDialogues.length)];
+      document.getElementById('otter-text').innerText = text;
+      const svg = document.getElementById('otter-svg');
+      svg.classList.add('active');
+      setTimeout(() => svg.classList.remove('active'), 1200);
+    }
+
+    function switchTab(tab) {
+      if (tab === 'tasks') {
+        document.getElementById('view-tasks').style.display = 'block';
+        document.getElementById('view-shop').style.display = 'none';
+        document.getElementById('tab-tasks-btn').classList.add('active');
+        document.getElementById('tab-shop-btn').classList.remove('active');
+      } else {
+        document.getElementById('view-tasks').style.display = 'none';
+        document.getElementById('view-shop').style.display = 'block';
+        document.getElementById('tab-tasks-btn').classList.remove('active');
+        document.getElementById('tab-shop-btn').classList.add('active');
+      }
+    }
+
+    function renderTaskList() {
+      const listContainer = document.getElementById('task-list');
+      listContainer.innerHTML = '';
+
+      allTasks.forEach(task => {
+        const isDone = todayCompletedTasks.includes(task.id);
+        const card = document.createElement('div');
+        card.className = `card-item ${isDone ? 'completed' : ''}`;
+        
+        card.innerHTML = `
+          <div class="card-info">
+            <h3>${task.title}</h3>
+            <span class="task-badge">+${task.points} 點</span>
+          </div>
+          ${isDone 
+            ? `<button class="upload-btn done" disabled>✅ 今日已打卡</button>`
+            : `<button class="upload-btn" onclick="triggerUpload('${task.id}', ${task.points})">📷 拍照打卡</button>`
+          }
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    function renderRewardList() {
+      const shopContainer = document.getElementById('reward-list');
+      shopContainer.innerHTML = '';
+
+      allRewards.forEach(reward => {
+        const canAfford = currentPoints >= reward.cost;
+        const diff = reward.cost - currentPoints;
+        const isPending = pendingRedeems.some(item => item.rewardId === reward.id);
+        
+        const card = document.createElement('div');
+        card.className = 'card-item';
+        
+        let buttonHtml = '';
+        if (isPending) {
+          buttonHtml = `<button class="redeem-btn pending" disabled>⏳ 父母核准中</button>`;
+        } else if (canAfford) {
+          buttonHtml = `<button class="redeem-btn" onclick="requestRedeem('${reward.id}', '${reward.title}', ${reward.cost})">🎁 申請兌換</button>`;
+        } else {
+          buttonHtml = `<button class="redeem-btn disabled" disabled>還差 ${diff} 點</button>`;
+        }
+
+        card.innerHTML = `
+          <div class="card-info">
+            <h3>${reward.title}</h3>
+            <span class="task-badge" style="background:var(--badge-bg); color:var(--badge-text);">需要 ${reward.cost} 點</span>
+          </div>
+          ${buttonHtml}
+        `;
+        shopContainer.appendChild(card);
+      });
+    }
+
+    function requestRedeem(id, title, cost) {
+      if (confirm(`確定要向爸爸媽媽申請兌換「${title}」嗎？`)) {
+        const requestItem = {
+          requestId: 'req_' + Date.now(),
+          rewardId: id,
+          title: title,
+          cost: cost,
+          time: new Date().toLocaleTimeString()
+        };
+        pendingRedeems.push(requestItem);
+        saveStateToFirebase();
+        alert(`🔔 申請已送出！快請爸爸媽媽打開「家長管理」核准禮物吧！`);
+      }
+    }
+
+    function openParentModal() {
+      document.getElementById('parent-auth').style.display = 'block';
+      document.getElementById('parent-controls').style.display = 'none';
+      document.getElementById('parent-pin').value = '';
+      document.getElementById('parent-modal').classList.add('active');
+    }
+
+    function closeParentModal() { document.getElementById('parent-modal').classList.remove('active'); }
+
+    function checkParentPin() {
+      const pin = document.getElementById('parent-pin').value;
+      if (pin === '1234') {
+        document.getElementById('parent-auth').style.display = 'none';
+        document.getElementById('parent-controls').style.display = 'block';
+        renderManageLists();
+      } else {
+        alert("密碼不正確喔！");
+      }
+    }
+
+    function renderManageLists() {
+      const requestsBox = document.getElementById('manage-requests-list');
+      requestsBox.innerHTML = '';
+
+      if (pendingRedeems.length === 0) {
+        requestsBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">目前沒有待核准的禮物申請。</p>';
+      } else {
+        pendingRedeems.forEach(req => {
+          const div = document.createElement('div');
+          div.className = 'manage-item';
+          div.style.border = '2px solid #FFCDD2';
+          div.innerHTML = `
+            <span><b>${req.title}</b> (扣 ${req.cost} 點)</span>
+            <div>
+              <button class="approve-btn" onclick="parentApproveRedeem('${req.requestId}', ${req.cost}, '${req.title}')">✅ 同意</button>
+              <button class="delete-btn" onclick="parentRejectRedeem('${req.requestId}')">❌ 拒絕</button>
+            </div>
+          `;
+          requestsBox.appendChild(div);
+        });
+      }
+
+      const historyBox = document.getElementById('manage-history-list');
+      historyBox.innerHTML = '';
+
+      if (todayCompletedTasks.length === 0) {
+        historyBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">今日尚無打卡紀錄。</p>';
+      } else {
+        todayCompletedTasks.forEach(taskId => {
+          const task = allTasks.find(t => t.id === taskId);
+          const taskTitle = task ? task.title : '未知任務';
+          const points = task ? task.points : 0;
+          const photoData = todayPhotos[taskId] || null;
+
+          const div = document.createElement('div');
+          div.className = 'manage-item';
+          div.innerHTML = `
+            <span>${taskTitle} (+${points}點)</span>
+            <div>
+              ${photoData 
+                ? `<button class="view-photo-btn" onclick="viewPhoto('${taskTitle}', '${taskId}')">👀 照片</button>
+                   <button class="approve-btn" onclick="approveAndClearPhoto('${taskId}')">✅ OK 審核通過</button>` 
+                : `<span style="font-size:0.75rem; color:#4CAF50; font-weight:bold; margin-right:6px;">已審核通過</span>`
+              }
+              <button class="delete-btn" onclick="revokeCheckin('${taskId}', ${points})">撤銷</button>
+            </div>
+          `;
+          historyBox.appendChild(div);
+        });
+      }
+
+      const taskManageBox = document.getElementById('manage-tasks-list');
+      taskManageBox.innerHTML = '';
+      allTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'manage-item';
+        div.innerHTML = `
+          <span>${task.title} (+${task.points}點)</span>
+          <div>
+            <button class="edit-btn" onclick="editTask('${task.id}')">✏️ 編輯</button>
+            <button class="delete-btn" onclick="deleteTask('${task.id}')">刪除</button>
+          </div>
+        `;
+        taskManageBox.appendChild(div);
+      });
+
+      const rewardManageBox = document.getElementById('manage-rewards-list');
+      rewardManageBox.innerHTML = '';
+      allRewards.forEach(reward => {
+        const div = document.createElement('div');
+        div.className = 'manage-item';
+        div.innerHTML = `
+          <span>${reward.title} (${reward.cost}點)</span>
+          <div>
+            <button class="edit-btn" onclick="editReward('${reward.id}')">✏️ 編輯</button>
+            <button class="delete-btn" onclick="deleteReward('${reward.id}')">刪除</button>
+          </div>
+        `;
+        rewardManageBox.appendChild(div);
+      });
+    }
+
+    function parentApproveRedeem(requestId, cost, title) {
+      if (confirm(`確認要同意芊芊兌換「${title}」嗎？這將會正式扣除點數 ${cost} 點！`)) {
+        if (currentPoints < cost) {
+          alert("芊芊此時的點數不足，無法核准兌換喔！");
+          return;
+        }
+        currentPoints -= cost;
+        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);
+        saveStateToFirebase();
+
+        setTimeout(() => {
+          interactOtter();
+          fireFancyConfetti();
+          alert(`🎉 已核准！成功扣除 ${cost} 點，快把禮物拿給芊芊吧！`);
+        }, 100);
+      }
+    }
+
+    function parentRejectRedeem(requestId) {
+      if (confirm("確定要拒絕或取消這筆禮物申請嗎？（點數不會被扣除）")) {
+        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);
+        saveStateToFirebase();
+      }
+    }
+
+    function approveAndClearPhoto(taskId) {
+      if (confirm("確認照片 OK 審核通過？這將會刪除照片以節省雲端空間，但保留芊芊的點數與完成紀錄！")) {
+        delete todayPhotos[taskId];
+        todayDoc.set({ photos: todayPhotos }, { merge: true }).then(() => {
+          alert("審核通過！照片已順利移除，空間已釋放！");
+          renderManageLists();
+        }).catch((err) => {
+          alert("操作失敗，請再試一次。");
+        });
+      }
+    }
+
+    function viewPhoto(title, taskId) {
+      const photoData = todayPhotos[taskId];
+      document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
+      document.getElementById('photo-view-img').src = photoData;
+      document.getElementById('parent-modal').classList.remove('active');
+      document.getElementById('photo-view-modal').classList.add('active');
+    }
+
+    function closePhotoViewModal() {
+      document.getElementById('photo-view-modal').classList.remove('active');
+      document.getElementById('parent-modal').classList.add('active');
+    }
+
+    function editTask(id) {
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return;
+      const newTitle = prompt("請修改任務名稱：", task.title);
+      if (newTitle !== null && newTitle.trim() !== "") {
+        const newPtsStr = prompt("請修改完成獲得的點數：", task.points);
+        const newPts = parseInt(newPtsStr);
+        task.title = newTitle.trim();
+        if (!isNaN(newPts) && newPts > 0) task.points = newPts;
+        saveStateToFirebase();
+      }
+    }
+
+    function editReward(id) {
+      const reward = allRewards.find(r => r.id === id);
+      if (!reward) return;
+      const newTitle = prompt("請修改禮物名稱：", reward.title);
+      if (newTitle !== null && newTitle.trim() !== "") {
+        const newCostStr = prompt("請修改所需點數：", reward.cost);
+        const newCost = parseInt(newCostStr);
+        reward.title = newTitle.trim();
+        if (!isNaN(newCost) && newCost > 0) reward.cost = newCost;
+        saveStateToFirebase();
+      }
+    }
+
+    function revokeCheckin(taskId, points) {
+      if (confirm("確定要撤銷這筆打卡嗎？(點數會同步扣除)")) {
+        todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);
+        delete todayPhotos[taskId];
+        currentPoints = Math.max(0, currentPoints - points);
+        saveStateToFirebase();
+        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos });
+      }
+    }
+
+    function deleteTask(id) {
+      if (confirm("確定要刪除這個任務嗎？")) {
+        allTasks = allTasks.filter(t => t.id !== id);
+        saveStateToFirebase();
+      }
+    }
+
+    function deleteReward(id) {
+      if (confirm("確定要刪除這個禮物嗎？")) {
+        allRewards = allRewards.filter(r => r.id !== id);
+        saveStateToFirebase();
+      }
+    }
+
+    function addNewTask() {
+      const taskName = prompt("請輸入新增的打卡任務名稱：", "🎹 練習彈鋼琴");
+      if (taskName && taskName.trim() !== "") {
+        const pointsStr = prompt("請輸入完成此任務獲得的點數：", "10");
+        const pts = parseInt(pointsStr) || 10;
+        const newTask = { id: 'task_' + Date.now(), title: taskName.trim(), points: pts };
+        allTasks.push(newTask);
+        saveStateToFirebase();
+      }
+    }
+
+    function addNewReward() {
+      const rewardName = prompt("請輸入新增的禮物名稱：", "🧸 買新娃娃");
+      if (!rewardName || !rewardName.trim()) return;
+      const costStr = prompt("請輸入兌換所需點數：", "150");
+      const cost = parseInt(costStr);
+      if (rewardName && !isNaN(cost) && cost > 0) {
+        const newReward = { id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost };
+        allRewards.push(newReward);
+        saveStateToFirebase();
+      }
+    }
+
+    function adjustPointsDirectly() {
+      const input = prompt("請輸入要調整的點數總額：", currentPoints);
+      const newPts = parseInt(input);
+      if (!isNaN(newPts) && newPts >= 0) {
+        currentPoints = newPts;
+        saveStateToFirebase();
+        alert(`點數已更新為 ${currentPoints} 點！`);
+      }
+    }
+
+    function showRandomQuote() {
+      const item = multiQuotes[Math.floor(Math.random() * multiQuotes.length)];
+      document.getElementById('q-zh').innerText = item.zh;
+      document.getElementById('q-en').innerText = item.en;
+      document.getElementById('q-jp').innerText = item.jp;
+      document.getElementById('quote-modal').classList.add('active');
+    }
+
+    function closeQuoteModal() { document.getElementById('quote-modal').classList.remove('active'); }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.capture = 'environment';
+    document.body.appendChild(fileInput);
+
+    function triggerUpload(taskId, points) { activeTaskId = taskId; activePoints = points; fileInput.click(); }
+
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxDimension = 500;
+            let width = img.width; let height = img.height;
+            if (width > height) {
+              if (width > maxDimension) { height = Math.round((height * maxDimension) / width); width = maxDimension; }
+            } else {
+              if (height > maxDimension) { width = Math.round((width * maxDimension) / height); height = maxDimension; }
+            }
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+            pendingImageData = canvas.toDataURL('image/jpeg', 0.5);
+            document.getElementById('preview-image').src = pendingImageData;
+            document.getElementById('preview-modal').classList.add('active');
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function closePreviewModal() { document.getElementById('preview-modal').classList.remove('active'); fileInput.value = ''; }
+
+    function confirmUpload() {
+      const confirmBtn = document.getElementById('confirm-btn');
+      confirmBtn.innerText = "打卡儲存中..."; confirmBtn.disabled = true;
+      currentPoints += activePoints; saveStateToFirebase();
+
+      if (!todayCompletedTasks.includes(activeTaskId)) {
+        todayCompletedTasks.push(activeTaskId); todayPhotos[activeTaskId] = pendingImageData;
+        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos }, { merge: true }).then(() => {
+          closePreviewModal(); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
+          interactOtter(); fireFancyConfetti(); fileInput.value = '';
+        }).catch((err) => {
+          alert("儲存失敗，請再試一次！"); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
+        });
+      }
+    }
+
+    function fireFancyConfetti() {
+      var count = 200; var defaults = { origin: { y: 0.7 } };
+      function fire(particleRatio, opts) { confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) })); }
+      fire(0.25, { spread: 26, startVelocity: 55 }); fire(0.2, { spread: 60 });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+      setTimeout(() => { confetti({ shapes: ['star'], colors: ['#FFE082', '#FFB300', '#FF8F00'], particleCount: 50, spread: 100, origin: { y: 0.5 } }); }, 300);
+    }
+
+    init();
+  </script>
+</body>
+</html>
