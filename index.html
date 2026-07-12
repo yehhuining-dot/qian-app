@@ -103,6 +103,7 @@
       box-shadow: 0 3px 8px rgba(255, 183, 77, 0.3);
     }
     .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
+    .redeem-btn.pending { background: #B0BEC5; color: white; cursor: default; box-shadow: none; }
 
     /* 🦦 方案 C 海獺角色 */
     .otter-wrapper {
@@ -225,6 +226,7 @@
     </div>
   </div>
 
+  <!-- 🦦 小海獺角色 -->
   <div class="otter-wrapper" onclick="interactOtter()">
     <div class="otter-bubble" id="otter-text">拍拍手！芊芊加油喔！👏</div>
     <svg class="otter-svg-card" id="otter-svg" viewBox="0 0 120 130">
@@ -303,6 +305,10 @@
       <div id="parent-controls" style="display: none; text-align: left;">
         <hr style="border: 0.5px solid #FFE082; margin: 10px 0 15px 0;">
 
+        <!-- 🔔 禮物審核核准專區 -->
+        <h4 style="margin: 5px 0; color: #D32F2F;">🎁 芊芊的禮物兌換申請：</h4>
+        <div class="manage-list" id="manage-requests-list" style="margin-bottom:15px;"></div>
+
         <h4 style="margin: 5px 0; color: #E65100;">📷 今日打卡相片審核：</h4>
         <div class="manage-list" id="manage-history-list"></div>
 
@@ -379,6 +385,7 @@
     let currentPoints = 0;
     let allTasks = [...defaultTasks];
     let allRewards = [...defaultRewards];
+    let pendingRedeems = []; // 儲存待核准的禮物申請紀錄
 
     const todayStr = getTodayString();
     let todayCompletedTasks = [];
@@ -395,6 +402,7 @@
           currentPoints = data.points !== undefined ? data.points : 0;
           allTasks = data.tasks || defaultTasks;
           allRewards = data.rewards || defaultRewards;
+          pendingRedeems = data.pendingRedeems || [];
         } else {
           saveStateToFirebase();
         }
@@ -431,7 +439,8 @@
       stateDoc.set({
         points: currentPoints,
         tasks: allTasks,
-        rewards: allRewards
+        rewards: allRewards,
+        pendingRedeems: pendingRedeems
       }, { merge: true });
     }
 
@@ -492,21 +501,45 @@
       allRewards.forEach(reward => {
         const canAfford = currentPoints >= reward.cost;
         const diff = reward.cost - currentPoints;
+        const isPending = pendingRedeems.some(item => item.rewardId === reward.id);
+        
         const card = document.createElement('div');
         card.className = 'card-item';
         
+        let buttonHtml = '';
+        if (isPending) {
+          buttonHtml = `<button class="redeem-btn pending" disabled>⏳ 父母核准中</button>`;
+        } else if (canAfford) {
+          buttonHtml = `<button class="redeem-btn" onclick="requestRedeem('${reward.id}', '${reward.title}', ${reward.cost})">🎁 申請兌換</button>`;
+        } else {
+          buttonHtml = `<button class="redeem-btn disabled" disabled>還差 ${diff} 點</button>`;
+        }
+
         card.innerHTML = `
           <div class="card-info">
             <h3>${reward.title}</h3>
             <span class="task-badge" style="background:#FFE082; color:#E65100;">需要 ${reward.cost} 點</span>
           </div>
-          ${canAfford 
-            ? `<button class="redeem-btn" onclick="redeemReward('${reward.title}', ${reward.cost})">🎁 兌換</button>`
-            : `<button class="redeem-btn disabled" disabled>還差 ${diff} 點</button>`
-          }
+          ${buttonHtml}
         `;
         shopContainer.appendChild(card);
       });
+    }
+
+    // 🌟 小朋友端：點擊禮物後發出申請（此時先不扣點數）
+    function requestRedeem(id, title, cost) {
+      if (confirm(`確定要向爸爸媽媽申請兌換「${title}」嗎？`)) {
+        const requestItem = {
+          requestId: 'req_' + Date.now(),
+          rewardId: id,
+          title: title,
+          cost: cost,
+          time: new Date().toLocaleTimeString()
+        };
+        pendingRedeems.push(requestItem);
+        saveStateToFirebase();
+        alert(`🔔 申請已送出！快請爸爸媽媽打開「家長管理」核准禮物吧！`);
+      }
     }
 
     function openParentModal() {
@@ -532,6 +565,29 @@
     }
 
     function renderManageLists() {
+      // 1. 🔔 禮物審核核准清單
+      const requestsBox = document.getElementById('manage-requests-list');
+      requestsBox.innerHTML = '';
+
+      if (pendingRedeems.length === 0) {
+        requestsBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">目前沒有待核准的禮物申請。</p>';
+      } else {
+        pendingRedeems.forEach(req => {
+          const div = document.createElement('div');
+          div.className = 'manage-item';
+          div.style.border = '2px solid #FFCDD2';
+          div.innerHTML = `
+            <span><b>${req.title}</b> (扣 ${req.cost} 點)</span>
+            <div>
+              <button class="approve-btn" onclick="parentApproveRedeem('${req.requestId}', ${req.cost}, '${req.title}')">✅ 同意</button>
+              <button class="delete-btn" onclick="parentRejectRedeem('${req.requestId}')">❌ 拒絕</button>
+            </div>
+          `;
+          requestsBox.appendChild(div);
+        });
+      }
+
+      // 2. 今日打卡相片審核
       const historyBox = document.getElementById('manage-history-list');
       historyBox.innerHTML = '';
 
@@ -561,6 +617,7 @@
         });
       }
 
+      // 3. 任務編輯清單
       const taskManageBox = document.getElementById('manage-tasks-list');
       taskManageBox.innerHTML = '';
       allTasks.forEach(task => {
@@ -576,6 +633,7 @@
         taskManageBox.appendChild(div);
       });
 
+      // 4. 禮物項目編輯清單
       const rewardManageBox = document.getElementById('manage-rewards-list');
       rewardManageBox.innerHTML = '';
       allRewards.forEach(reward => {
@@ -592,18 +650,40 @@
       });
     }
 
-    // 🌟 核心新功能：家長 OK 審核通過後，移除照片但保留點數與紀錄
+    // 🌟 家長端：同意核准禮物（這時候才正式扣除點數！）
+    function parentApproveRedeem(requestId, cost, title) {
+      if (confirm(`確認要同意芊芊兌換「${title}」嗎？這將會正式扣除點數 ${cost} 點！`)) {
+        if (currentPoints < cost) {
+          alert("芊芊此時的點數不足，無法核准兌換喔！");
+          return;
+        }
+        currentPoints -= cost;
+        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);
+        saveStateToFirebase();
+
+        setTimeout(() => {
+          interactOtter();
+          fireFancyConfetti();
+          alert(`🎉 已核准！成功扣除 ${cost} 點，快把禮物拿給芊芊吧！`);
+        }, 100);
+      }
+    }
+
+    // 🌟 家長端：拒絕/取消禮物申請
+    function parentRejectRedeem(requestId) {
+      if (confirm("確定要拒絕或取消這筆禮物申請嗎？（點數不會被扣除）")) {
+        pendingRedeems = pendingRedeems.filter(item => item.requestId !== requestId);
+        saveStateToFirebase();
+      }
+    }
+
     function approveAndClearPhoto(taskId) {
       if (confirm("確認照片 OK 審核通過？這將會刪除照片以節省雲端空間，但保留芊芊的點數與完成紀錄！")) {
         delete todayPhotos[taskId];
-
-        todayDoc.set({
-          photos: todayPhotos
-        }, { merge: true }).then(() => {
+        todayDoc.set({ photos: todayPhotos }, { merge: true }).then(() => {
           alert("審核通過！照片已順利移除，空間已釋放！");
           renderManageLists();
         }).catch((err) => {
-          console.error("審核失敗：", err);
           alert("操作失敗，請再試一次。");
         });
       }
@@ -613,7 +693,6 @@
       const photoData = todayPhotos[taskId];
       document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
       document.getElementById('photo-view-img').src = photoData;
-
       document.getElementById('parent-modal').classList.remove('active');
       document.getElementById('photo-view-modal').classList.add('active');
     }
@@ -626,16 +705,12 @@
     function editTask(id) {
       const task = allTasks.find(t => t.id === id);
       if (!task) return;
-
       const newTitle = prompt("請修改任務名稱：", task.title);
       if (newTitle !== null && newTitle.trim() !== "") {
         const newPtsStr = prompt("請修改完成獲得的點數：", task.points);
         const newPts = parseInt(newPtsStr);
-        
         task.title = newTitle.trim();
-        if (!isNaN(newPts) && newPts > 0) {
-          task.points = newPts;
-        }
+        if (!isNaN(newPts) && newPts > 0) task.points = newPts;
         saveStateToFirebase();
       }
     }
@@ -643,16 +718,12 @@
     function editReward(id) {
       const reward = allRewards.find(r => r.id === id);
       if (!reward) return;
-
       const newTitle = prompt("請修改禮物名稱：", reward.title);
       if (newTitle !== null && newTitle.trim() !== "") {
         const newCostStr = prompt("請修改所需點數：", reward.cost);
         const newCost = parseInt(newCostStr);
-
         reward.title = newTitle.trim();
-        if (!isNaN(newCost) && newCost > 0) {
-          reward.cost = newCost;
-        }
+        if (!isNaN(newCost) && newCost > 0) reward.cost = newCost;
         saveStateToFirebase();
       }
     }
@@ -661,15 +732,9 @@
       if (confirm("確定要撤銷這筆打卡嗎？(點數會同步扣除)")) {
         todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);
         delete todayPhotos[taskId];
-
         currentPoints = Math.max(0, currentPoints - points);
         saveStateToFirebase();
-
-        todayDoc.set({
-          date: todayStr,
-          completedTasks: todayCompletedTasks,
-          photos: todayPhotos
-        });
+        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos });
       }
     }
 
@@ -701,10 +766,8 @@
     function addNewReward() {
       const rewardName = prompt("請輸入新增的禮物名稱：", "🧸 買新娃娃");
       if (!rewardName || !rewardName.trim()) return;
-      
       const costStr = prompt("請輸入兌換所需點數：", "150");
       const cost = parseInt(costStr);
-
       if (rewardName && !isNaN(cost) && cost > 0) {
         const newReward = { id: 'reward_' + Date.now(), title: rewardName.trim(), cost: cost };
         allRewards.push(newReward);
@@ -722,18 +785,6 @@
       }
     }
 
-    function redeemReward(title, cost) {
-      if (confirm(`確定要花費 ${cost} 點兌換「${title}」嗎？`)) {
-        currentPoints -= cost;
-        saveStateToFirebase();
-        
-        interactOtter();
-        fireFancyConfetti();
-
-        alert(`🎉 恭喜芊芊成功兌換「${title}」！找爸爸媽媽領取禮物吧！`);
-      }
-    }
-
     function showRandomQuote() {
       const item = multiQuotes[Math.floor(Math.random() * multiQuotes.length)];
       document.getElementById('q-zh').innerText = item.zh;
@@ -747,49 +798,31 @@
     }
 
     const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.capture = 'environment';
+    fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.capture = 'environment';
     document.body.appendChild(fileInput);
 
     function triggerUpload(taskId, points) {
-      activeTaskId = taskId;
-      activePoints = points;
-      fileInput.click();
+      activeTaskId = taskId; activePoints = points; fileInput.click();
     }
 
     fileInput.addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         const reader = new FileReader();
-
         reader.onload = function(evt) {
           const img = new Image();
           img.onload = function() {
             const canvas = document.createElement('canvas');
             const maxDimension = 500;
-            let width = img.width;
-            let height = img.height;
-
+            let width = img.width; let height = img.height;
             if (width > height) {
-              if (width > maxDimension) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
-              }
+              if (width > maxDimension) { height = Math.round((height * maxDimension) / width); width = maxDimension; }
             } else {
-              if (height > maxDimension) {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
-              }
+              if (height > maxDimension) { width = Math.round((width * maxDimension) / height); height = maxDimension; }
             }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
             pendingImageData = canvas.toDataURL('image/jpeg', 0.5);
-
             document.getElementById('preview-image').src = pendingImageData;
             document.getElementById('preview-modal').classList.add('active');
           };
@@ -799,67 +832,32 @@
       }
     });
 
-    function closePreviewModal() {
-      document.getElementById('preview-modal').classList.remove('active');
-      fileInput.value = '';
-    }
+    function closePreviewModal() { document.getElementById('preview-modal').classList.remove('active'); fileInput.value = ''; }
 
     function confirmUpload() {
       const confirmBtn = document.getElementById('confirm-btn');
-      confirmBtn.innerText = "打卡儲存中...";
-      confirmBtn.disabled = true;
-
-      currentPoints += activePoints;
-      saveStateToFirebase();
+      confirmBtn.innerText = "打卡儲存中..."; confirmBtn.disabled = true;
+      currentPoints += activePoints; saveStateToFirebase();
 
       if (!todayCompletedTasks.includes(activeTaskId)) {
-        todayCompletedTasks.push(activeTaskId);
-        todayPhotos[activeTaskId] = pendingImageData;
-
-        todayDoc.set({
-          date: todayStr,
-          completedTasks: todayCompletedTasks,
-          photos: todayPhotos
-        }, { merge: true }).then(() => {
-          closePreviewModal();
-          confirmBtn.innerText = "確定打卡！";
-          confirmBtn.disabled = false;
-
-          interactOtter();
-          fireFancyConfetti();
-          fileInput.value = '';
+        todayCompletedTasks.push(activeTaskId); todayPhotos[activeTaskId] = pendingImageData;
+        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos }, { merge: true }).then(() => {
+          closePreviewModal(); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
+          interactOtter(); fireFancyConfetti(); fileInput.value = '';
         }).catch((err) => {
-          console.error("打卡上傳失敗：", err);
-          alert("儲存失敗，請再試一次！");
-          confirmBtn.innerText = "確定打卡！";
-          confirmBtn.disabled = false;
+          alert("儲存失敗，請再試一次！"); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
         });
       }
     }
 
     function fireFancyConfetti() {
-      var count = 200;
-      var defaults = { origin: { y: 0.7 } };
-
-      function fire(particleRatio, opts) {
-        confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) }));
-      }
-
-      fire(0.25, { spread: 26, startVelocity: 55 });
-      fire(0.2, { spread: 60 });
+      var count = 200; var defaults = { origin: { y: 0.7 } };
+      function fire(particleRatio, opts) { confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) })); }
+      fire(0.25, { spread: 26, startVelocity: 55 }); fire(0.2, { spread: 60 });
       fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
       fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
       fire(0.1, { spread: 120, startVelocity: 45 });
-
-      setTimeout(() => {
-        confetti({
-          shapes: ['star'],
-          colors: ['#FFE082', '#FFB300', '#FF8F00'],
-          particleCount: 50,
-          spread: 100,
-          origin: { y: 0.5 }
-        });
-      }, 300);
+      setTimeout(() => { confetti({ shapes: ['star'], colors: ['#FFE082', '#FFB300', '#FF8F00'], particleCount: 50, spread: 100, origin: { y: 0.5 } }); }, 300);
     }
 
     init();
