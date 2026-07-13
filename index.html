@@ -9,13 +9,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="芊芊打卡">
 
+  <!-- Confetti 彩帶 -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+  <!-- Google Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* CSS 變數定義預設色調 (檸檬黃) */
     :root {
       --bg-color: #FFFDE7;
       --bg-pattern: #FBC02D;
@@ -140,34 +141,31 @@
     .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
     .redeem-btn.pending { background: #B0BEC5; color: white; cursor: default; box-shadow: none; }
 
-    /* 🦦 方案 C 海獺角色 */
-    .otter-wrapper {
+    /* 🐿️ 芊芊專屬手繪小鬆鼠角色風格 */
+    .character-wrapper {
       position: fixed; bottom: 12px; right: 15px; z-index: 99;
       display: flex; flex-direction: column; align-items: center; cursor: pointer;
     }
 
-    .otter-bubble {
+    .character-bubble {
       background: #FFF; padding: 8px 14px; border-radius: 18px; font-size: 0.85rem;
       font-weight: bold; color: #6D4C41; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border: 2px solid var(--tab-active); margin-bottom: 6px; white-space: nowrap;
       animation: floatBubble 2.5s infinite ease-in-out;
     }
 
-    .otter-svg-card {
-      width: 110px; height: 120px; animation: otterFloat 3s infinite ease-in-out;
-      filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.08));
+    .character-img {
+      width: 100px; height: 115px; object-fit: contain;
+      animation: characterFloat 3s infinite ease-in-out;
+      filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.15));
+      mix-blend-mode: multiply; /* 去除黑色背景，讓角色無縫融入網頁 */
     }
 
-    .paw-left, .paw-right { transform-origin: center; transition: transform 0.15s; }
-    .otter-svg-card.active { animation: otterJump 0.4s infinite alternate ease-in-out !important; }
-    .otter-svg-card.active .paw-left { animation: clapLeft 0.18s infinite alternate ease-in-out; }
-    .otter-svg-card.active .paw-right { animation: clapRight 0.18s infinite alternate ease-in-out; }
+    .character-img.active { animation: characterJump 0.4s infinite alternate ease-in-out !important; }
 
-    @keyframes otterFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+    @keyframes characterFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
     @keyframes floatBubble { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-    @keyframes otterJump { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-12px) scale(1.06); } }
-    @keyframes clapLeft { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(20deg) translate(8px, -4px); } }
-    @keyframes clapRight { 0% { transform: rotate(0deg) translate(0, 0); } 100% { transform: rotate(-20deg) translate(-8px, -4px); } }
+    @keyframes characterJump { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-14px) scale(1.08); } }
 
     /* Modal 彈出視窗 */
     .modal-overlay {
@@ -203,44 +201,13 @@
     .btn-group { display: flex; gap: 10px; justify-content: center; }
     .cancel-btn { background: #E0E0E0; color: #616161; }
 
-    /* 配色選擇器風格 */
-    .theme-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .theme-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background: #FFF;
-      border-radius: 14px;
-      border: 2px solid #EEE;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #4E342E;
-      transition: all 0.2s ease;
-    }
-    .theme-item.active {
-      border-color: #4CAF50;
-      background: #E8F5E9;
-    }
-    .theme-color-dot {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      border: 1px solid rgba(0,0,0,0.1);
-    }
+    .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .theme-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #FFF; border-radius: 14px; border: 2px solid #EEE; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #4E342E; transition: all 0.2s ease; }
+    .theme-item.active { border-color: #4CAF50; background: #E8F5E9; }
+    .theme-color-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
 
     .manage-list { text-align: left; margin-bottom: 15px; }
-    .manage-item {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #FFF; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px;
-      border: 1px solid var(--card-border); font-size: 0.9rem;
-    }
+    .manage-item { display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px; border: 1px solid var(--card-border); font-size: 0.9rem; }
     .edit-btn { background: #FFB74D; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; }
     .delete-btn { background: #FF5252; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
     .view-photo-btn { background: #2196F3; color: white; border: none; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-right: 4px; }
@@ -284,35 +251,10 @@
     </div>
   </div>
 
-  <div class="otter-wrapper" onclick="interactOtter()">
-    <div class="otter-bubble" id="otter-text">拍拍手！芊芊加油喔！👏</div>
-    <svg class="otter-svg-card" id="otter-svg" viewBox="0 0 120 130">
-      <defs>
-        <linearGradient id="otterFur" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#E0D5C1" />
-          <stop offset="100%" stop-color="#CBBCA5" />
-        </linearGradient>
-      </defs>
-      <g stroke="#7A6858" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="42" cy="118" rx="10" ry="6" fill="#CBBCA5" />
-        <ellipse cx="78" cy="118" rx="10" ry="6" fill="#CBBCA5" />
-        <path d="M 32 65 C 22 80, 22 110, 38 118 C 48 122, 72 122, 82 118 C 98 110, 98 80, 88 65 Z" fill="url(#otterFur)" />
-        <path d="M 40 70 C 32 82, 32 106, 42 112 C 50 115, 70 115, 78 112 C 88 106, 88 82, 80 70 Z" fill="#FFFFFF" stroke="none" />
-        <circle cx="60" cy="45" r="32" fill="url(#otterFur)" />
-        <circle cx="31" cy="32" r="5" fill="#E0D5C1" />
-        <circle cx="89" cy="32" r="5" fill="#E0D5C1" />
-        <circle cx="31" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
-        <circle cx="89" cy="32" r="2.5" fill="#C8B8A2" stroke="none" />
-        <ellipse cx="42" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
-        <ellipse cx="78" cy="52" rx="5" ry="3" fill="#FFB74D" opacity="0.5" stroke="none" />
-        <path d="M 45 42 Q 49 38, 53 42" fill="none" stroke="#524336" stroke-width="2.5" />
-        <path d="M 67 42 Q 71 38, 75 42" fill="none" stroke="#524336" stroke-width="2.5" />
-        <ellipse cx="60" cy="48" rx="3.5" ry="2.5" fill="#524336" stroke="none" />
-        <path d="M 54 52 Q 60 56, 60 52 Q 60 56, 66 52" fill="none" stroke="#524336" stroke-width="2.5" />
-        <g class="paw-left"><path d="M 30 75 C 38 82, 50 82, 52 72 C 46 68, 36 68, 30 75 Z" fill="#E0D5C1" /></g>
-        <g class="paw-right"><path d="M 90 75 C 82 82, 70 82, 68 72 C 74 68, 84 68, 90 75 Z" fill="#E0D5C1" /></g>
-      </g>
-    </svg>
+  <!-- 🐿️ 芊芊親手畫的吉祥物角色 -->
+  <div class="character-wrapper" onclick="interactCharacter()">
+    <div class="character-bubble" id="character-text">喝一口奶茶！芊芊加油喔！🥤</div>
+    <img class="character-img" id="character-img" src="未命名的作品 4.jpg" alt="芊芊手繪角色">
   </div>
 
   <div class="modal-overlay" id="theme-modal">
@@ -410,7 +352,6 @@
     const stateDoc = db.collection("qian_data").doc("state");
     const todayDoc = db.collection("qian_data").doc("today_records");
 
-    // 🎨 10 種精選馬卡龍主題色調設定
     const macaronThemes = [
       { id: 'yellow', name: '檸檬黃', bg: '#FFFDE7', border: '#FFF59D', title: '#F57F17', btn: '#FBC02D', text: '#3E2723', badgeBg: '#FFF59D', badgeText: '#F57F17' },
       { id: 'pink', name: '櫻花粉', bg: '#FCE4EC', border: '#F8BBD0', title: '#C2185B', btn: '#F48FB1', text: '#880E4F', badgeBg: '#F8BBD0', badgeText: '#C2185B' },
@@ -429,7 +370,6 @@
     function applyTheme(themeId) {
       const theme = macaronThemes.find(t => t.id === themeId) || macaronThemes[0];
       currentThemeId = theme.id;
-
       const root = document.documentElement;
       root.style.setProperty('--bg-color', theme.bg);
       root.style.setProperty('--card-border', theme.border);
@@ -441,7 +381,6 @@
       root.style.setProperty('--btn-text', theme.text);
       root.style.setProperty('--badge-bg', theme.badgeBg);
       root.style.setProperty('--badge-text', theme.badgeText);
-
       renderThemeGrid();
     }
 
@@ -455,10 +394,7 @@
         const item = document.createElement('div');
         item.className = `theme-item ${t.id === currentThemeId ? 'active' : ''}`;
         item.onclick = () => applyTheme(t.id);
-        item.innerHTML = `
-          <div class="theme-color-dot" style="background: ${t.btn}"></div>
-          <span>${t.name}</span>
-        `;
+        item.innerHTML = `<div class="theme-color-dot" style="background: ${t.btn}"></div><span>${t.name}</span>`;
         grid.appendChild(item);
       });
     }
@@ -475,12 +411,12 @@
       { zh: "今天也要帶著燦爛的微笑完成任務喔！", en: "Complete your tasks with a big smile today!", jp: "今日も素敵な笑顔で任務を完了しよう！" }
     ];
 
-    const otterDialogues = [
-      "拍拍手！芊芊最棒了！👏",
+    const characterDialogues = [
+      "喝一口奶茶！芊芊加油喔！🥤",
       "今天又累積了好多點數呢！✨",
       "記得天天打卡，換大禮物喔！🎁",
-      "為你加油！芊芊衝呀！🦦",
-      "搓搓手！芊芊今天超級棒！👏"
+      "為你加油！芊芊衝呀！🐿️",
+      "搖搖大尾巴！芊芊今天超級棒！❤️"
     ];
 
     let defaultTasks = [
@@ -569,12 +505,12 @@
       initFirebaseListener();
     }
 
-    function interactOtter() {
-      const text = otterDialogues[Math.floor(Math.random() * otterDialogues.length)];
-      document.getElementById('otter-text').innerText = text;
-      const svg = document.getElementById('otter-svg');
-      svg.classList.add('active');
-      setTimeout(() => svg.classList.remove('active'), 1200);
+    function interactCharacter() {
+      const text = characterDialogues[Math.floor(Math.random() * characterDialogues.length)];
+      document.getElementById('character-text').innerText = text;
+      const img = document.getElementById('character-img');
+      img.classList.add('active');
+      setTimeout(() => img.classList.remove('active'), 1200);
     }
 
     function switchTab(tab) {
@@ -774,7 +710,7 @@
         saveStateToFirebase();
 
         setTimeout(() => {
-          interactOtter();
+          interactCharacter();
           fireFancyConfetti();
           alert(`🎉 已核准！成功扣除 ${cost} 點，快把禮物拿給芊芊吧！`);
         }, 100);
@@ -950,7 +886,7 @@
         todayCompletedTasks.push(activeTaskId); todayPhotos[activeTaskId] = pendingImageData;
         todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos }, { merge: true }).then(() => {
           closePreviewModal(); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
-          interactOtter(); fireFancyConfetti(); fileInput.value = '';
+          interactCharacter(); fireFancyConfetti(); fileInput.value = '';
         }).catch((err) => {
           alert("儲存失敗，請再試一次！"); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
         });
