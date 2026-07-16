@@ -117,9 +117,8 @@
       display: flex; justify-content: space-between; align-items: center;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease;
     }
-    .card-item.completed { background: rgba(240, 240, 240, 0.75); border: 1px solid #C8E6C9; }
     .card-info h3 { margin: 0 0 4px 0; font-size: 1.05rem; color: #4E342E; }
-    .card-item.completed .card-info h3 { color: #A1887F; text-decoration: line-through; }
+    .count-badge { font-size: 0.8rem; color: #388E3C; font-weight: bold; margin-top: 2px; display: block; }
 
     .task-badge {
       display: inline-block; background: var(--badge-bg); color: var(--badge-text);
@@ -131,7 +130,6 @@
       border-radius: 14px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
       box-shadow: 0 3px 6px rgba(0,0,0,0.08);
     }
-    .upload-btn.done { background: #A5D6A7; color: #1B5E20; cursor: default; box-shadow: none; }
 
     .redeem-btn {
       background: #FFB74D; color: white; border: none; padding: 10px 14px;
@@ -141,7 +139,7 @@
     .redeem-btn.disabled { background: #E0E0E0; color: #9E9E9E; cursor: not-allowed; box-shadow: none; }
     .redeem-btn.pending { background: #B0BEC5; color: white; cursor: default; box-shadow: none; }
 
-    /* 🐿️ 芊芊專屬手繪小鬆鼠角色風格 */
+    /* 🐿️ 芊芊吉祥物風格 */
     .character-wrapper {
       position: fixed; bottom: 12px; right: 15px; z-index: 99;
       display: flex; flex-direction: column; align-items: center; cursor: pointer;
@@ -158,7 +156,7 @@
       width: 100px; height: 115px; object-fit: contain;
       animation: characterFloat 3s infinite ease-in-out;
       filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.15));
-      mix-blend-mode: multiply; /* 去除黑色背景，讓角色無縫融入網頁 */
+      mix-blend-mode: multiply;
     }
 
     .character-img.active { animation: characterJump 0.4s infinite alternate ease-in-out !important; }
@@ -251,7 +249,7 @@
     </div>
   </div>
 
-  <!-- 🐿️ 芊芊親手畫的吉祥物角色 (使用 URI 編碼轉換檔名) -->
+  <!-- 🐿️ 芊芊手繪角色 -->
   <div class="character-wrapper" onclick="interactCharacter()">
     <div class="character-bubble" id="character-text">喝一口奶茶！芊芊加油喔！🥤</div>
     <img class="character-img" id="character-img" src="%E6%9C%AA%E5%91%BD%E5%90%8D%E7%9A%84%E4%BD%9C%E5%93%81%204.PNG" alt="芊芊手繪角色">
@@ -441,8 +439,7 @@
     let pendingRedeems = [];
 
     const todayStr = getTodayString();
-    let todayCompletedTasks = [];
-    let todayPhotos = {};
+    let todayRecordsList = []; // 改為陣列結構，紀錄多筆打卡 [{recordId, taskId, time, photoData}]
 
     let activePoints = 0;
     let activeTaskId = null;
@@ -472,15 +469,13 @@
         if (doc.exists) {
           const data = doc.data();
           if (data.date === todayStr) {
-            todayCompletedTasks = data.completedTasks || [];
-            todayPhotos = data.photos || {};
+            todayRecordsList = data.recordsList || [];
           } else {
-            todayCompletedTasks = [];
-            todayPhotos = {};
-            todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
+            todayRecordsList = [];
+            todayDoc.set({ date: todayStr, recordsList: [] });
           }
         } else {
-          todayDoc.set({ date: todayStr, completedTasks: [], photos: {} });
+          todayDoc.set({ date: todayStr, recordsList: [] });
         }
         renderTaskList();
         if (document.getElementById('parent-controls').style.display === 'block') {
@@ -527,24 +522,24 @@
       }
     }
 
+    // 🌟 核心升級：支援多次打卡，顯示今日打卡次數
     function renderTaskList() {
       const listContainer = document.getElementById('task-list');
       listContainer.innerHTML = '';
 
       allTasks.forEach(task => {
-        const isDone = todayCompletedTasks.includes(task.id);
+        // 計算該任務今天打了幾次卡
+        const count = todayRecordsList.filter(r => r.taskId === task.id).length;
         const card = document.createElement('div');
-        card.className = `card-item ${isDone ? 'completed' : ''}`;
+        card.className = 'card-item';
         
         card.innerHTML = `
           <div class="card-info">
             <h3>${task.title}</h3>
             <span class="task-badge">+${task.points} 點</span>
+            ${count > 0 ? `<span class="count-badge">✨ 今日已完成 ${count} 次</span>` : ''}
           </div>
-          ${isDone 
-            ? `<button class="upload-btn done" disabled>✅ 今日已打卡</button>`
-            : `<button class="upload-btn" onclick="triggerUpload('${task.id}', ${task.points})">📷 拍照打卡</button>`
-          }
+          <button class="upload-btn" onclick="triggerUpload('${task.id}', ${task.points})">📷 拍照打卡</button>
         `;
         listContainer.appendChild(card);
       });
@@ -617,6 +612,7 @@
       }
     }
 
+    // 🌟 後台清單：按順序呈現多次打卡的每一筆記錄
     function renderManageLists() {
       const requestsBox = document.getElementById('manage-requests-list');
       requestsBox.innerHTML = '';
@@ -642,26 +638,25 @@
       const historyBox = document.getElementById('manage-history-list');
       historyBox.innerHTML = '';
 
-      if (todayCompletedTasks.length === 0) {
+      if (todayRecordsList.length === 0) {
         historyBox.innerHTML = '<p style="font-size:0.85rem; color:#888;">今日尚無打卡紀錄。</p>';
       } else {
-        todayCompletedTasks.forEach(taskId => {
-          const task = allTasks.find(t => t.id === taskId);
+        todayRecordsList.forEach((rec, idx) => {
+          const task = allTasks.find(t => t.id === rec.taskId);
           const taskTitle = task ? task.title : '未知任務';
-          const points = task ? task.points : 0;
-          const photoData = todayPhotos[taskId] || null;
+          const points = rec.points || (task ? task.points : 0);
 
           const div = document.createElement('div');
           div.className = 'manage-item';
           div.innerHTML = `
-            <span>${taskTitle} (+${points}點)</span>
+            <span>#${idx + 1} ${taskTitle} (+${points}點) <small style="color:#888;">${rec.time || ''}</small></span>
             <div>
-              ${photoData 
-                ? `<button class="view-photo-btn" onclick="viewPhoto('${taskTitle}', '${taskId}')">👀 照片</button>
-                   <button class="approve-btn" onclick="approveAndClearPhoto('${taskId}')">✅ OK 審核通過</button>` 
-                : `<span style="font-size:0.75rem; color:#4CAF50; font-weight:bold; margin-right:6px;">已審核通過</span>`
+              ${rec.photoData 
+                ? `<button class="view-photo-btn" onclick="viewPhoto('${taskTitle}', '${rec.recordId}')">👀 照片</button>
+                   <button class="approve-btn" onclick="approveAndClearPhoto('${rec.recordId}')">✅ OK 審核</button>` 
+                : `<span style="font-size:0.75rem; color:#4CAF50; font-weight:bold; margin-right:6px;">已審核</span>`
               }
-              <button class="delete-btn" onclick="revokeCheckin('${taskId}', ${points})">撤銷</button>
+              <button class="delete-btn" onclick="revokeCheckin('${rec.recordId}', ${points})">撤銷</button>
             </div>
           `;
           historyBox.appendChild(div);
@@ -724,24 +719,27 @@
       }
     }
 
-    function approveAndClearPhoto(taskId) {
+    function approveAndClearPhoto(recordId) {
       if (confirm("確認照片 OK 審核通過？這將會刪除照片以節省雲端空間，但保留芊芊的點數與完成紀錄！")) {
-        delete todayPhotos[taskId];
-        todayDoc.set({ photos: todayPhotos }, { merge: true }).then(() => {
-          alert("審核通過！照片已順利移除，空間已釋放！");
-          renderManageLists();
-        }).catch((err) => {
-          alert("操作失敗，請再試一次。");
-        });
+        const target = todayRecordsList.find(r => r.recordId === recordId);
+        if (target) {
+          target.photoData = null; // 移除照片
+          todayDoc.set({ recordsList: todayRecordsList }, { merge: true }).then(() => {
+            alert("審核通過！照片已順利移除，空間已釋放！");
+            renderManageLists();
+          });
+        }
       }
     }
 
-    function viewPhoto(title, taskId) {
-      const photoData = todayPhotos[taskId];
-      document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證`;
-      document.getElementById('photo-view-img').src = photoData;
-      document.getElementById('parent-modal').classList.remove('active');
-      document.getElementById('photo-view-modal').classList.add('active');
+    function viewPhoto(title, recordId) {
+      const target = todayRecordsList.find(r => r.recordId === recordId);
+      if (target && target.photoData) {
+        document.getElementById('photo-view-title').innerText = `📷 ${title} - 打卡佐證 (${target.time || ''})`;
+        document.getElementById('photo-view-img').src = target.photoData;
+        document.getElementById('parent-modal').classList.remove('active');
+        document.getElementById('photo-view-modal').classList.add('active');
+      }
     }
 
     function closePhotoViewModal() {
@@ -775,13 +773,13 @@
       }
     }
 
-    function revokeCheckin(taskId, points) {
-      if (confirm("確定要撤銷這筆打卡嗎？(點數會同步扣除)")) {
-        todayCompletedTasks = todayCompletedTasks.filter(id => id !== taskId);
-        delete todayPhotos[taskId];
+    // 撤銷特定的某一筆打卡
+    function revokeCheckin(recordId, points) {
+      if (confirm("確定要撤銷這筆打卡紀錄嗎？(點數會同步扣除)")) {
+        todayRecordsList = todayRecordsList.filter(r => r.recordId !== recordId);
         currentPoints = Math.max(0, currentPoints - points);
         saveStateToFirebase();
-        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos });
+        todayDoc.set({ date: todayStr, recordsList: todayRecordsList });
       }
     }
 
@@ -877,20 +875,43 @@
 
     function closePreviewModal() { document.getElementById('preview-modal').classList.remove('active'); fileInput.value = ''; }
 
+    // 🌟 寫入新一筆打卡紀錄（陣列新增）
     function confirmUpload() {
       const confirmBtn = document.getElementById('confirm-btn');
       confirmBtn.innerText = "打卡儲存中..."; confirmBtn.disabled = true;
-      currentPoints += activePoints; saveStateToFirebase();
 
-      if (!todayCompletedTasks.includes(activeTaskId)) {
-        todayCompletedTasks.push(activeTaskId); todayPhotos[activeTaskId] = pendingImageData;
-        todayDoc.set({ date: todayStr, completedTasks: todayCompletedTasks, photos: todayPhotos }, { merge: true }).then(() => {
-          closePreviewModal(); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
-          interactCharacter(); fireFancyConfetti(); fileInput.value = '';
-        }).catch((err) => {
-          alert("儲存失敗，請再試一次！"); confirmBtn.innerText = "確定打卡！"; confirmBtn.disabled = false;
-        });
-      }
+      // 1. 加點數
+      currentPoints += activePoints;
+      saveStateToFirebase();
+
+      // 2. 新增一筆記錄
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const newRecord = {
+        recordId: 'rec_' + Date.now(),
+        taskId: activeTaskId,
+        points: activePoints,
+        time: timeStr,
+        photoData: pendingImageData
+      };
+
+      todayRecordsList.push(newRecord);
+
+      todayDoc.set({
+        date: todayStr,
+        recordsList: todayRecordsList
+      }, { merge: true }).then(() => {
+        closePreviewModal();
+        confirmBtn.innerText = "確定打卡！";
+        confirmBtn.disabled = false;
+        interactCharacter();
+        fireFancyConfetti();
+        fileInput.value = '';
+      }).catch((err) => {
+        alert("儲存失敗，請再試一次！");
+        confirmBtn.innerText = "確定打卡！";
+        confirmBtn.disabled = false;
+      });
     }
 
     function fireFancyConfetti() {
